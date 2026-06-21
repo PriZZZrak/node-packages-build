@@ -1,0 +1,83 @@
+# OpenWRT Node Packages — GitHub Actions Build
+
+This repository contains a GitHub Actions workflow that builds **all Node.js packages** from the [nxhack/openwrt-node-packages](https://github.com/nxhack/openwrt-node-packages) feed for **OpenWRT 24.10.6** on **mediatek/filogic** (`aarch64_cortex-a53`).
+
+## How it works
+
+The workflow runs inside the official OpenWRT SDK container (`openwrt/sdk:aarch64_cortex-a53-24.10.6`) on GitHub Actions. It:
+
+1. Configures the custom node feed
+2. Enables all packages (`CONFIG_ALL=y`)
+3. Builds everything with `IGNORE_ERRORS=1`
+4. Generates a `Packages.gz` index
+5. Publishes the repository to **GitHub Pages**
+6. Uploads built `.ipk` files and build logs as artifacts
+
+## Usage
+
+### Trigger a build
+
+- **On push**: Pushing to `main` or `master` automatically triggers the workflow.
+- **Manually**: Go to your repository's **Actions** tab, select **Build OpenWRT Node Packages**, and click **Run workflow**.
+
+### Download packages
+
+After a successful build, you have three ways to access the packages:
+
+1. **GitHub Pages feed** (once configured — see below)
+2. **Artifacts**: Download `ipk-packages-aarch64_cortex-a53.zip` from the workflow run page
+3. **Build logs**: Download `build-logs.zip` to troubleshoot any failures
+
+## Configuring GitHub Pages
+
+After the first successful workflow run:
+
+1. Go to repository **Settings → Pages**
+2. Under **Source**, select **Deploy from a branch**
+3. Set **Branch** to `gh-pages` / `/ (root)`
+4. Click **Save**
+
+## Adding the feed to your router
+
+Once Pages is set up, add this line to `/etc/opkg/customfeeds.conf` on your OpenWRT router:
+
+```
+src/gz custom_node https://YOUR_USERNAME.github.io/YOUR_REPO/packages/aarch64_cortex-a53/node
+```
+
+Replace `YOUR_USERNAME` and `YOUR_REPO` with your GitHub username and repository name.
+
+Then update and install:
+
+```bash
+opkg update
+opkg list | grep node # see available node packages
+opkg install node node-npm # example
+```
+
+## Packages built
+
+The feed includes many Node.js-related packages:
+- `node` — Node.js runtime
+- `node-npm` — npm package manager
+- `node-yarn` — Yarn package manager
+- Various Node.js modules and tools
+
+See the [nxhack/openwrt-node-packages](https://github.com/nxhack/openwrt-node-packages) repository for the full list.
+
+## Workflow file
+
+The build workflow is at `.github/workflows/build.yml`. Key details:
+
+- **Container**: `openwrt/sdk:aarch64_cortex-a53-24.10.6`
+- **Feed**: `https://github.com/nxhack/openwrt-node-packages.git` (branch `openwrt-24.10`)
+- **Build**: All packages with `CONFIG_ALL=y` and `IGNORE_ERRORS=1`
+- **Index**: `Packages.gz` generated for opkg compatibility
+- **Deploy**: GitHub Pages via `peaceiris/actions-gh-pages@v3`
+
+## Notes
+
+- Build can take **1+ hours** depending on the number of packages
+- `IGNORE_ERRORS=1` ensures the build continues even if some packages fail
+- Only the `aarch64_cortex-a53` architecture is built (mediatek/filogic)
+- Package signing is intentionally disabled
