@@ -69,7 +69,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ipk-packages-aarch64_cortex-a53
-          path: bin/packages/aarch64_cortex-a53/node/*.ipk
+          path: bin/packages/aarch64_cortex-a53/*.ipk
 
       - name: Upload build logs
         if: always()
