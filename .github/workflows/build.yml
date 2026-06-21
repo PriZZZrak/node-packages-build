@@ -41,6 +41,7 @@ jobs:
           make defconfig
           sed -i 's/# CONFIG_ALL is not set/CONFIG_ALL=y/' .config 2>/dev/null || \
             echo 'CONFIG_ALL=y' >> .config
+          echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
           make defconfig
           make -j$(nproc) IGNORE_ERRORS=1 BUILD_LOG=1 V=0 CONFIG_AUTOREMOVE=y || true
 
