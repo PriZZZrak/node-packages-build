@@ -1,0 +1,7 @@
+QA Scenario: Проверка структуры workflow
+===================================
+- test -f .github/workflows/build.yml: PASS
+- grep -q 'container:' : PASS
+- grep -q 'CONFIG_ALL' : PASS
+- YAML syntax: VALID (manual verification - consistent 2-space indentation, proper structure)
+

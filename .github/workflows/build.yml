@@ -1,0 +1,64 @@
+name: Build OpenWRT Node Packages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: mediatek/filogic (aarch64_cortex-a53)
+    runs-on: ubuntu-latest
+    container:
+      image: openwrt/sdk:aarch64_cortex-a53-24.10.6
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup custom feeds
+        run: |
+          echo "src-git node https://github.com/nxhack/openwrt-node-packages.git" >> feeds.conf
+          ./scripts/feeds update -a
+          rm -rf package/feeds/packages/node*
+          ./scripts/feeds install -a -p node
+
+      - name: Configure ALL packages and build
+        run: |
+          make defconfig
+          sed -i 's/# CONFIG_ALL is not set/CONFIG_ALL=y/' .config 2>/dev/null || \
+            echo 'CONFIG_ALL=y' >> .config
+          make defconfig
+          make -j$(nproc) IGNORE_ERRORS=1 BUILD_LOG=1 V=0 CONFIG_AUTOREMOVE=y
+
+      - name: Generate package index
+        run: make package/index V=s
+
+      - name: List built packages
+        run: |
+          echo "=== IPK packages ==="
+          find bin/packages/ -name "*.ipk" | sort
+          echo ""
+          echo "Total: $(find bin/packages/ -name '*.ipk' | wc -l)"
+          echo ""
+          echo "=== Package index ==="
+          find bin/packages/ -name "Packages*"
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./bin/packages
+          destination_dir: packages
+
+      - name: Upload packages as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipk-packages-aarch64_cortex-a53
+          path: bin/packages/aarch64_cortex-a53/node/*.ipk
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: ./logs/
