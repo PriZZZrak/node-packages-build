@@ -1,0 +1,17 @@
+Package: node-ffmpeg-for-homebridge
+Version: 2.2.2-r1
+Depends: libc, node, ffmpeg
+Source: feeds/node/node-ffmpeg-for-homebridge
+SourceName: node-ffmpeg-for-homebridge
+License: none
+Section: lang
+SourceDateEpoch: 1781782334
+URL: https://www.npmjs.com/package/ffmpeg-for-homebridge
+Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
+Architecture: aarch64_cortex-a53
+Installed-Size: 20480
+Filename: node-ffmpeg-for-homebridge_2.2.2-r1_aarch64_cortex-a53.ipk
+Size: 5142
+SHA256sum: e0078d788ffd80b47be917d76e9ced53aca6112bd7283667705f02ff0ad352f5
+Description:  Static ffmpeg binaries for Homebridge with support for audio (libfdk-aac) and hardware decoding (h264_omx).
+
