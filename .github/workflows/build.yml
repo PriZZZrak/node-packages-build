@@ -16,10 +16,16 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup SDK buildroot
-        env:
-          TARGET: mediatek/filogic
         run: |
-          [ ! -d ./scripts ] && /builder/setup.sh
+          if [ ! -d ./scripts ]; then
+            SDK_FILE="openwrt-sdk-24.10.6-mediatek-filogic_gcc-13.3.0_musl.Linux-x86_64.tar.zst"
+            echo "Downloading SDK for mediatek/filogic..."
+            curl -sL "https://downloads.openwrt.org/releases/24.10.6/targets/mediatek/filogic/${SDK_FILE}" -o "/tmp/${SDK_FILE}"
+            echo "Extracting SDK..."
+            tar --zstd -xf "/tmp/${SDK_FILE}" --strip=1 --no-same-owner
+            rm -f "/tmp/${SDK_FILE}"
+            echo "SDK setup complete."
+          fi
 
       - name: Setup custom feeds
         run: |
