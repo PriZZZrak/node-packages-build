@@ -15,6 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup SDK buildroot
+        run: |
+          [ ! -d ./scripts ] && ./setup.sh
+
       - name: Setup custom feeds
         run: |
           echo "src-git node https://github.com/nxhack/openwrt-node-packages.git" >> feeds.conf
