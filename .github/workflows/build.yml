@@ -9,6 +9,8 @@ jobs:
   build:
     name: mediatek/filogic (aarch64_cortex-a53)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     container:
       image: openwrt/sdk:aarch64_cortex-a53-24.10.6
       options: --user root
