@@ -58,20 +58,16 @@ jobs:
           make defconfig
           mkdir -p staging_dir/hostpkg
 
-      - name: Provide OpenSSL headers for node cross-compilation
+      - name: Patch node Makefile — remove --shared-openssl (use bundled OpenSSL)
         run: |
-          HOST_SSL_DIR="staging_dir/host/include/openssl"
-          TOOLCHAIN_INC_DIR=$(ls -d staging_dir/toolchain-*/usr/include 2>/dev/null | head -1)
-          if [ -d "$HOST_SSL_DIR" ] && [ -n "$TOOLCHAIN_INC_DIR" ]; then
-            if [ ! -d "$TOOLCHAIN_INC_DIR/openssl" ]; then
-              cp -r "$HOST_SSL_DIR" "$TOOLCHAIN_INC_DIR/"
-              echo "✅ Copied OpenSSL headers -> $TOOLCHAIN_INC_DIR/"
-              ls "$TOOLCHAIN_INC_DIR/openssl/" 2>/dev/null | head -5
-            else
-              echo "✅ OpenSSL headers already present"
-            fi
+          NODE_MAKEFILE="package/feeds/node/node/Makefile"
+          if [ -f "$NODE_MAKEFILE" ]; then
+            grep -q -- "--shared-openssl" "$NODE_MAKEFILE" && \
+              sed -i 's/--shared-openssl/--shared-openssl-disabled/g' "$NODE_MAKEFILE" || true
+            echo "✅ Patched $NODE_MAKEFILE: --shared-openssl removed"
+            grep "openssl" "$NODE_MAKEFILE" || true
           else
-            echo "⚠️  Skipping: no host SSL dir or toolchain inc dir"
+            echo "⚠️  $NODE_MAKEFILE not found"
           fi
 
       - name: Build ALL node packages
