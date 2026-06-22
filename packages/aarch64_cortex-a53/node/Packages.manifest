@@ -277,8 +277,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 1105920
 Filename: node-binaryjs_0.2.1-r14_aarch64_cortex-a53.ipk
-Size: 303606
-SHA256sum: d1cfe5b2beb667db0a07fe6a05c9bdd5a8f42380450f004b2bb7e10c189a1115
+Size: 303604
+SHA256sum: 659c7f4be529eedc632f16a65878141d6322f45d46679640219638cedb45d863
 Description:  Node binary websocket streaming made easy
 
 Package: node-bleacon
@@ -347,10 +347,10 @@ SourceDateEpoch: 1781782334
 URL: https://www.npmjs.com/package/camera.ui
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 100935680
+Installed-Size: 100966400
 Filename: node-camera.ui_1.1.17-r1_aarch64_cortex-a53.ipk
-Size: 20300803
-SHA256sum: 9b23f76b748ab4f6c35dab330c940f0f4e67c6623ebfba3967a9f6f609e8c670
+Size: 20306773
+SHA256sum: 10d9541d9b127c9e5a00d83a446dd48b964fac7bfd9fa99db380e94817e8b0fb
 Description:  *** "camara.ui" has not been maintained. Please use it at your own risk. ***
  NVR like user interface for RTSP capable cameras.
 
