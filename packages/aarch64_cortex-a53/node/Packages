@@ -202,8 +202,8 @@ URL: https://www.npmjs.org/package/binaryjs
 Architecture: aarch64_cortex-a53
 Installed-Size: 1105920
 Filename: node-binaryjs_0.2.1-r14_aarch64_cortex-a53.ipk
-Size: 303604
-SHA256sum: 659c7f4be529eedc632f16a65878141d6322f45d46679640219638cedb45d863
+Size: 303602
+SHA256sum: 6b57304055f7074d5ec68be9b064b45d53647d91d8dc65d2f4bb72f564f57a79
 Description:  Node binary websocket streaming made easy
 
 Package: node-bleacon
@@ -508,15 +508,15 @@ Description:  node-gyp is a cross-platform command-line tool written in Node.js 
 
 Package: node-hap-nodejs
 Version: 1.2.0-r1
-Depends: libc, node, libopenssl
+Depends: libc, node, libopenssl3
 License: Apache-2.0
 Section: lang
 URL: https://www.npmjs.org/package/hap-nodejs
 Architecture: aarch64_cortex-a53
 Installed-Size: 9635840
 Filename: node-hap-nodejs_1.2.0-r1_aarch64_cortex-a53.ipk
-Size: 2026233
-SHA256sum: ef7f1ea6507c7b461011202f1a38627ad2e5fff3b4091cca5e180a766a2b0827
+Size: 2026236
+SHA256sum: f19452fb673e7488a6a8622d076fa29c2ef03ca0e0a633a973644cd4c4579dbe
 Description:  HAP-NodeJS is a Node.js implementation of HomeKit Accessory Server
 
 Package: node-hashmap
