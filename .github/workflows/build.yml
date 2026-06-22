@@ -44,6 +44,7 @@ jobs:
           make defconfig
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
           make defconfig
+          mkdir -p staging_dir/hostpkg
           make -j$(nproc) IGNORE_ERRORS=1 BUILD_LOG=1 V=99 CONFIG_AUTOREMOVE=y || true
 
       - name: List built packages and verify index
