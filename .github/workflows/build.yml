@@ -31,8 +31,15 @@ jobs:
 
       - name: Setup custom feeds
         run: |
+          # Copy default feeds (packages, luci, routing, telephony) to provide
+          # libopenssl, libcares, libnghttp2 etc. that node needs
+          if [ ! -f feeds.conf ]; then
+            cp feeds.conf.default feeds.conf 2>/dev/null || true
+          fi
           echo "src-git node https://github.com/nxhack/openwrt-node-packages.git" >> feeds.conf
           ./scripts/feeds update -a
+          # Install packages that node depends on (from the packages feed)
+          ./scripts/feeds install libopenssl libcares libnghttp2 2>/dev/null || true
           rm -rf package/feeds/packages/node*
           ./scripts/feeds install -a -p node
 
@@ -58,23 +65,7 @@ jobs:
           make defconfig
           mkdir -p staging_dir/hostpkg
 
-      - name: Patch node Makefile — bundled OpenSSL (delete --shared-openssl, add include paths)
-        run: |
-          NODE_MAKEFILE="package/feeds/node/node/Makefile"
-          if [ -f "$NODE_MAKEFILE" ]; then
-            # 1. Delete --shared-openssl line entirely (invalid flag causes configure to error)
-            sed -i '/--shared-openssl/d' "$NODE_MAKEFILE"
-            # 2. Remove +libopenssl from DEPENDS (no system OpenSSL package available)
-            sed -i '/DEPENDS/s/+libopenssl[ \t]*//g' "$NODE_MAKEFILE"
-            # 3. Add bundled openssl include BEFORE toolchain paths (so ncrypto finds correct headers)
-            sed -i '/^PKG_BUILD_DIR:=/a PKG_CPPFLAGS += -I$(PKG_BUILD_DIR)/deps/openssl/openssl/include -I$(PKG_BUILD_DIR)/deps/openssl/openssl/crypto/include' "$NODE_MAKEFILE"
-            echo "✅ Patched $NODE_MAKEFILE:"
-            echo "   - --shared-openssl deleted"
-            echo "   - +libopenssl removed from DEPENDS"
-            echo "   - PKG_CPPFLAGS added for bundled openssl headers"
-          else
-            echo "⚠️  $NODE_MAKEFILE not found"
-          fi
+
 
       - name: Build ALL node packages
         run: |
