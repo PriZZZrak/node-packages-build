@@ -88,6 +88,24 @@ Size: 726402
 SHA256sum: 90c52517321bb716f629d88a8df225f2e816f16bebf035152c168592e7ab183a
 Description:  An implementation of The Web Application Messaging Protocol (WAMP)
 
+Package: node-aws-crt
+Version: 1.32.2-r1
+Depends: libc, node
+Source: feeds/node/node-aws-crt
+SourceName: node-aws-crt
+License: Apache-2.0
+LicenseFiles: LICENSE
+Section: lang
+SourceDateEpoch: 1781782334
+URL: https://www.npmjs.com/package/aws-crt
+Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
+Architecture: aarch64_cortex-a53
+Installed-Size: 37007360
+Filename: node-aws-crt_1.32.2-r1_aarch64_cortex-a53.ipk
+Size: 10110145
+SHA256sum: 78c45f134985433aa52a3d6d558a739c09f3f4b80052d8022a05bfe7a7ce1475
+Description:  NodeJS/Browser bindings for the AWS Common Runtime
+
 Package: node-aws-iot-device-sdk-v2
 Version: 1.27.0-r1
 Depends: libc, node, node-aws-crt
@@ -259,8 +277,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 1105920
 Filename: node-binaryjs_0.2.1-r14_aarch64_cortex-a53.ipk
-Size: 303608
-SHA256sum: e82bb61e8b05eae7c35f22c4662dddf0fc1cd331e6054e5ac82586b9d03cb5ad
+Size: 303606
+SHA256sum: d1cfe5b2beb667db0a07fe6a05c9bdd5a8f42380450f004b2bb7e10c189a1115
 Description:  Node binary websocket streaming made easy
 
 Package: node-bleacon
