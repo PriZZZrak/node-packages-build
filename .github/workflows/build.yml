@@ -48,26 +48,44 @@ jobs:
             ls -la key-build 2>/dev/null || echo "key-build missing"
           fi
 
-      - name: Configure ALL packages and build
+      - name: Configure ALL packages
         run: |
           make defconfig
           sed -i 's/# CONFIG_ALL is not set/CONFIG_ALL=y/' .config 2>/dev/null || \
             echo 'CONFIG_ALL=y' >> .config
           make defconfig
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
+          echo 'CONFIG_PACKAGE_libopenssl=y' >> .config
           make defconfig
           mkdir -p staging_dir/hostpkg
+
+      - name: Pre-build libopenssl for native module support
+        run: |
+          echo "=== Building libopenssl to stage OpenSSL headers ==="
+          make package/libs/openssl/compile -j$(nproc) V=0
+          echo "=== Checking staged OpenSSL headers ==="
+          find staging_dir/ -name "bio.h" -path "*/openssl/*" 2>/dev/null | head -5
+          echo "Done."
+
+      - name: Build ALL node packages
+        run: |
           make -j$(nproc) IGNORE_ERRORS=1 BUILD_LOG=1 V=0 CONFIG_AUTOREMOVE=y || true
 
-      - name: Debug - rebuild node-zigbee2mqtt with verbose output
+      - name: Debug - verify OpenSSL & node headers, rebuild zigbee2mqtt
         if: always()
         run: |
+          echo "=== Checking OpenSSL staging headers ==="
+          find staging_dir/ -name "bio.h" -path "*/openssl/*" 2>/dev/null | head -5
+          if [ -z "$(find staging_dir/ -name 'bio.h' -path '*/openssl/*' 2>/dev/null)" ]; then
+            echo "❌ MISSING: OpenSSL headers in staging"
+          else
+            echo "✅ OpenSSL headers found in staging"
+          fi
+          echo ""
           echo "=== Checking node staging headers ==="
           find staging_dir/ -name "node.h" -path "*/include/node/*" 2>/dev/null | head -5
           if [ -z "$(find staging_dir/ -name 'node.h' -path '*/include/node/*' 2>/dev/null)" ]; then
             echo "❌ MISSING: node.h in staging — native modules cannot compile!"
-            echo "Checking staging_dir structure:"
-            ls -la staging_dir/ 2>/dev/null | head -10
           else
             echo "✅ node headers found in staging"
           fi
