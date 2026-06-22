@@ -58,16 +58,20 @@ jobs:
           make defconfig
           mkdir -p staging_dir/hostpkg
 
-      - name: Patch node Makefile — use bundled OpenSSL (delete --shared-openssl)
+      - name: Patch node Makefile — bundled OpenSSL (delete --shared-openssl, add include paths)
         run: |
           NODE_MAKEFILE="package/feeds/node/node/Makefile"
           if [ -f "$NODE_MAKEFILE" ]; then
-            # Delete --shared-openssl line entirely (invalid flag causes configure to error)
+            # 1. Delete --shared-openssl line entirely (invalid flag causes configure to error)
             sed -i '/--shared-openssl/d' "$NODE_MAKEFILE"
-            # Also remove +libopenssl from DEPENDS (no system OpenSSL needed)
-            sed -i 's/ +libopenssl//g' "$NODE_MAKEFILE"
-            echo "✅ Patched $NODE_MAKEFILE: --shared-openssl deleted, +libopenssl removed"
-            grep -E "openssl|shared" "$NODE_MAKEFILE" || echo "(no openssl references remain)"
+            # 2. Remove +libopenssl from DEPENDS (no system OpenSSL package available)
+            sed -i '/DEPENDS/s/+libopenssl[ \t]*//g' "$NODE_MAKEFILE"
+            # 3. Add bundled openssl include BEFORE toolchain paths (so ncrypto finds correct headers)
+            sed -i '/^PKG_BUILD_DIR:=/a PKG_CPPFLAGS += -I$(PKG_BUILD_DIR)/deps/openssl/openssl/include -I$(PKG_BUILD_DIR)/deps/openssl/openssl/crypto/include' "$NODE_MAKEFILE"
+            echo "✅ Patched $NODE_MAKEFILE:"
+            echo "   - --shared-openssl deleted"
+            echo "   - +libopenssl removed from DEPENDS"
+            echo "   - PKG_CPPFLAGS added for bundled openssl headers"
           else
             echo "⚠️  $NODE_MAKEFILE not found"
           fi
