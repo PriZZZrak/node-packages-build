@@ -58,14 +58,16 @@ jobs:
           make defconfig
           mkdir -p staging_dir/hostpkg
 
-      - name: Patch node Makefile — remove --shared-openssl (use bundled OpenSSL)
+      - name: Patch node Makefile — use bundled OpenSSL (delete --shared-openssl)
         run: |
           NODE_MAKEFILE="package/feeds/node/node/Makefile"
           if [ -f "$NODE_MAKEFILE" ]; then
-            grep -q -- "--shared-openssl" "$NODE_MAKEFILE" && \
-              sed -i 's/--shared-openssl/--shared-openssl-disabled/g' "$NODE_MAKEFILE" || true
-            echo "✅ Patched $NODE_MAKEFILE: --shared-openssl removed"
-            grep "openssl" "$NODE_MAKEFILE" || true
+            # Delete --shared-openssl line entirely (invalid flag causes configure to error)
+            sed -i '/--shared-openssl/d' "$NODE_MAKEFILE"
+            # Also remove +libopenssl from DEPENDS (no system OpenSSL needed)
+            sed -i 's/ +libopenssl//g' "$NODE_MAKEFILE"
+            echo "✅ Patched $NODE_MAKEFILE: --shared-openssl deleted, +libopenssl removed"
+            grep -E "openssl|shared" "$NODE_MAKEFILE" || echo "(no openssl references remain)"
           else
             echo "⚠️  $NODE_MAKEFILE not found"
           fi
