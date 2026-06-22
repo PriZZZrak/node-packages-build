@@ -55,17 +55,24 @@ jobs:
             echo 'CONFIG_ALL=y' >> .config
           make defconfig
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
-          echo 'CONFIG_PACKAGE_libopenssl=y' >> .config
           make defconfig
           mkdir -p staging_dir/hostpkg
 
-      - name: Pre-build libopenssl for native module support
+      - name: Provide OpenSSL headers for node cross-compilation
         run: |
-          echo "=== Building libopenssl to stage OpenSSL headers ==="
-          make package/libs/openssl/compile -j$(nproc) V=0
-          echo "=== Checking staged OpenSSL headers ==="
-          find staging_dir/ -name "bio.h" -path "*/openssl/*" 2>/dev/null | head -5
-          echo "Done."
+          HOST_SSL_DIR="staging_dir/host/include/openssl"
+          TOOLCHAIN_INC_DIR=$(ls -d staging_dir/toolchain-*/usr/include 2>/dev/null | head -1)
+          if [ -d "$HOST_SSL_DIR" ] && [ -n "$TOOLCHAIN_INC_DIR" ]; then
+            if [ ! -d "$TOOLCHAIN_INC_DIR/openssl" ]; then
+              cp -r "$HOST_SSL_DIR" "$TOOLCHAIN_INC_DIR/"
+              echo "✅ Copied OpenSSL headers -> $TOOLCHAIN_INC_DIR/"
+              ls "$TOOLCHAIN_INC_DIR/openssl/" 2>/dev/null | head -5
+            else
+              echo "✅ OpenSSL headers already present"
+            fi
+          else
+            echo "⚠️  Skipping: no host SSL dir or toolchain inc dir"
+          fi
 
       - name: Build ALL node packages
         run: |
