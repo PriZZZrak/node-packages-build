@@ -202,8 +202,8 @@ URL: https://www.npmjs.org/package/binaryjs
 Architecture: aarch64_cortex-a53
 Installed-Size: 1105920
 Filename: node-binaryjs_0.2.1-r14_aarch64_cortex-a53.ipk
-Size: 303606
-SHA256sum: f9a2d411e21a11b3349ad5c29aaa1cbeaab462965768f2c5f4ac36d698b6744f
+Size: 303604
+SHA256sum: 89d5a55df7e6e67365849177021c3dd88bba1bf4933e9594db5286833a16a182
 Description:  Node binary websocket streaming made easy
 
 Package: node-bleacon
