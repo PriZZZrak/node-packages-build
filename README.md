@@ -42,10 +42,22 @@ After the first successful workflow run:
 Once Pages is set up, add this line to `/etc/opkg/customfeeds.conf` on your OpenWRT router:
 
 ```
-src/gz custom_node https://YOUR_USERNAME.github.io/YOUR_REPO/packages/aarch64_cortex-a53/node
+src/gz custom_node https://prizzzrak.github.io/node-packages-build/packages/aarch64_cortex-a53/node
 ```
 
 Replace `YOUR_USERNAME` and `YOUR_REPO` with your GitHub username and repository name.
+
+Then install the package signing key (required if `option check_signature 1` is set in `/etc/opkg.conf`):
+
+```bash
+# Download and install the public key
+FINGERPRINT=$(wget -qO- https://prizzzrak.github.io/node-packages-build/packages/aarch64_cortex-a53/key-build.pub | \
+  usign -F -p /dev/stdin)
+wget -qO /etc/opkg/keys/$FINGERPRINT \
+  https://prizzzrak.github.io/node-packages-build/packages/aarch64_cortex-a53/key-build.pub
+```
+
+Replace `prizzzrak` and `node-packages-build` with your GitHub username and repository name.
 
 Then update and install:
 
@@ -80,4 +92,4 @@ The build workflow is at `.github/workflows/build.yml`. Key details:
 - Build can take **1+ hours** depending on the number of packages
 - `IGNORE_ERRORS=1` ensures the build continues even if some packages fail
 - Only the `aarch64_cortex-a53` architecture is built (mediatek/filogic)
-- Package signing is intentionally disabled
+- Package signing is enabled (automatic via `usign` + generated `key-build`)
