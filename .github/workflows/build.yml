@@ -36,7 +36,7 @@ jobs:
           if [ ! -f feeds.conf ]; then
             cp feeds.conf.default feeds.conf 2>/dev/null || true
           fi
-          echo "src-git node https://github.com/nxhack/openwrt-node-packages.git" >> feeds.conf
+          echo "src-git-full node https://github.com/nxhack/openwrt-node-packages.git^openwrt-24.10" >> feeds.conf
           ./scripts/feeds update -a
           # Install packages that node depends on (from the packages feed)
           ./scripts/feeds install libopenssl libcares libnghttp2 2>/dev/null || true
@@ -61,39 +61,17 @@ jobs:
           sed -i 's/# CONFIG_ALL is not set/CONFIG_ALL=y/' .config 2>/dev/null || \
             echo 'CONFIG_ALL=y' >> .config
           make defconfig
+          echo 'CONFIG_NODEJS_22=y' >> .config
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
           make defconfig
           mkdir -p staging_dir/hostpkg
 
 
 
-      - name: Prepare node source and fix V8 C++20 compatibility
+      - name: Prepare node source (Node.js 22 — no C++20 patches needed)
         run: |
-          # Extract node source so we can patch V8 before the build
+          # Extract node source so the build system can find it
           make package/feeds/node/node/prepare V=s 2>&1 || true
-          NODE_DIR=$(find build_dir/target-* -maxdepth 1 -name "node-v*" -type d | head -1)
-          if [ -n "$NODE_DIR" ]; then
-            echo "=== Patching V8 C++20 usage in $NODE_DIR ==="
-            # Fix 1: std::make_unique_for_overwrite<T[]> → std::unique_ptr<T[]>(new T[size])
-            # (not available in SDK host GCC's libstdc++)
-            sed -i 's/std::make_unique_for_overwrite<T\[]>(size)/std::unique_ptr<T[]>(new T[size])/' \
-              "$NODE_DIR/deps/v8/src/base/vector.h"
-            # Fix 2: replace #include <bit> with <cstring> for memcpy fallback
-            sed -i 's/#include <bit>/#include <cstring>/' \
-              "$NODE_DIR/deps/v8/src/base/numbers/double.h"
-            # Fix 3: std::bit_cast → memcpy (not constexpr, but works with older libstdc++)
-            sed -i 's/inline constexpr uint64_t double_to_uint64/inline uint64_t double_to_uint64/' \
-              "$NODE_DIR/deps/v8/src/base/numbers/double.h"
-            sed -i 's/inline constexpr double uint64_to_double/inline double uint64_to_double/' \
-              "$NODE_DIR/deps/v8/src/base/numbers/double.h"
-            sed -i 's/return std::bit_cast<uint64_t>(d);/uint64_t result; memcpy(\&result, \&d, sizeof(result)); return result;/' \
-              "$NODE_DIR/deps/v8/src/base/numbers/double.h"
-            sed -i 's/return std::bit_cast<double>(d64);/double result; memcpy(\&result, \&d64, sizeof(result)); return result;/' \
-              "$NODE_DIR/deps/v8/src/base/numbers/double.h"
-            echo "✅ V8 C++20 compatibility patches applied"
-          else
-            echo "⚠️  Node source not found — will patch during build"
-          fi
 
       - name: Build ALL node packages
         run: |
