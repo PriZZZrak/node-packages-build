@@ -4374,10 +4374,10 @@ URL: https://www.python.org/
 CPE-ID: cpe:/a:python:python
 Maintainer: Jeffery To <jeffery.to@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 79237120
+Installed-Size: 79226880
 Filename: python3-dev_3.11.14-r1_aarch64_cortex-a53.ipk
-Size: 37333678
-SHA256sum: 0f4b7d3ea5774a99a9e3fb996b387805a831621996ac2d2ef6b9a9c395beecc0
+Size: 37333789
+SHA256sum: 9ad43cc8fa21cc2aedf3400f4dfc8753293ac762e80c43c059836209dafeb34e
 Description:  Python is an interpreted, interactive, object-oriented programming
  language. It incorporates modules, exceptions, dynamic typing, very high
  level dynamic data types, and classes. It supports multiple programming

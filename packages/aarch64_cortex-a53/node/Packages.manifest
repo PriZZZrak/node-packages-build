@@ -277,8 +277,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 1105920
 Filename: node-binaryjs_0.2.1-r14_aarch64_cortex-a53.ipk
-Size: 303602
-SHA256sum: 6b57304055f7074d5ec68be9b064b45d53647d91d8dc65d2f4bb72f564f57a79
+Size: 303606
+SHA256sum: ef870ee91463ab4def74e9489dfbf8c68499b84ca41871842975e3fc4229558f
 Description:  Node binary websocket streaming made easy
 
 Package: node-bleacon
@@ -347,10 +347,10 @@ SourceDateEpoch: 1781782334
 URL: https://www.npmjs.com/package/camera.ui
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 100966400
+Installed-Size: 99297280
 Filename: node-camera.ui_1.1.17-r1_aarch64_cortex-a53.ipk
-Size: 20306773
-SHA256sum: 10d9541d9b127c9e5a00d83a446dd48b964fac7bfd9fa99db380e94817e8b0fb
+Size: 19915437
+SHA256sum: b392fca9b4e40681bf1c77b478ee621c3189ec6f44dfa87154c16570ddcdbf1b
 Description:  *** "camara.ui" has not been maintained. Please use it at your own risk. ***
  NVR like user interface for RTSP capable cameras.
 
@@ -843,8 +843,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 58992640
 Filename: node-homebridge-eufy-security_4.6.1-r1_aarch64_cortex-a53.ipk
-Size: 18945728
-SHA256sum: ab7d5ae699f0ebc23df88fb0c67fa1bc85e843038a8bb194a190cff4baf563d0
+Size: 18945682
+SHA256sum: d5271e64ccec5478cfaa6beb22cc773d737b5afbacc6421f6b33b4551abd21cb
 Description:  Homebridge plugin to control certain Eufy Security devices.
 
 Package: node-homebridge-ewelink
@@ -859,10 +859,10 @@ SourceDateEpoch: 1781782334
 URL: https://www.npmjs.com/package/@homebridge-plugins/homebridge-ewelink
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 5437440
+Installed-Size: 5468160
 Filename: node-homebridge-ewelink_12.14.1-r1_aarch64_cortex-a53.ipk
-Size: 1010717
-SHA256sum: 51eaafe67caa0b51829b50faeacd09b1b021c672e57377bc29db8720d6c53d88
+Size: 1017478
+SHA256sum: 8e6ac183996e3d309d5e8476605091e277cbd802569c18cbc63226284c9d7018
 Description:  Homebridge plugin to integrate eWeLink devices into HomeKit.
 
 Package: node-homebridge-hue
@@ -1275,8 +1275,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 10926080
 Filename: node-mqtt_5.15.1-r1_aarch64_cortex-a53.ipk
-Size: 1949102
-SHA256sum: 88d243da0b3e6dec381fa3cc973f1f0c9a0723250699df50420ff97449633c7f
+Size: 1949089
+SHA256sum: b7ce62996ee0c70afef608399f965e31059911c80334fa928aa686b18420b371
 Description:  MQTT.js is a client library for the MQTT protocol, written in JavaScript for node.js and the browser
 
 Package: node-nconf
@@ -1581,8 +1581,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 87408640
 Filename: node-red_5.0.0-r1_aarch64_cortex-a53.ipk
-Size: 19020008
-SHA256sum: 7f0f04dcdb77f167b9f4e7ce428add4e623ef19529351e9c505f553eda62be43
+Size: 19020232
+SHA256sum: ebc94c0fec10ac7d8d5cee790a2aca2d1c5c484cd088503b21ac4be35dcfc529
 Description:  A visual tool for wiring the Internet of Things
 
 Package: node-rimraf
@@ -1812,10 +1812,10 @@ SourceDateEpoch: 1781782334
 URL: https://www.npmjs.org/package/twilio
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 23511040
+Installed-Size: 23541760
 Filename: node-twilio_6.0.2-r1_aarch64_cortex-a53.ipk
-Size: 2806668
-SHA256sum: b0697303926643d560404e3ea1292e28c28ca5196af2857056cf4db0bbd7f7d6
+Size: 2813622
+SHA256sum: 61adc1e3cde3209ff03e4f77449df28df7399ae861370a301bf478546b89c95b
 Description:  A Twilio helper library
 
 Package: node-typescript
