@@ -36,7 +36,7 @@ jobs:
           if [ ! -f feeds.conf ]; then
             cp feeds.conf.default feeds.conf 2>/dev/null || true
           fi
-          echo "src-git-full node https://github.com/nxhack/openwrt-node-packages.git^openwrt-24.10" >> feeds.conf
+          echo "src-git-full node https://github.com/nxhack/openwrt-node-packages.git^79e700cce4df3373b9630d66f2bc23fda0568d5d" >> feeds.conf
           ./scripts/feeds update -a
           # Install packages that node depends on (from the packages feed)
           ./scripts/feeds install libopenssl libcares libnghttp2 2>/dev/null || true
