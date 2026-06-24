@@ -55,13 +55,7 @@ jobs:
       - name: Install node packages and configure
         working-directory: ${{ env.SDK_DIR }}
         run: |
-          ./scripts/feeds install -a -p node
-          mkdir -p package/feeds/node
-          for pkg in feeds/node/*/; do
-            pkgname=$(basename "$pkg")
-            [ -L "package/feeds/node/$pkgname" ] || \
-              ln -sf "../../../feeds/node/$pkgname" "package/feeds/node/$pkgname"
-          done
+          ./scripts/feeds install -a
           make defconfig
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
           make defconfig
