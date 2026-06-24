@@ -13,6 +13,7 @@ jobs:
       contents: write
     container:
       image: openwrt/sdk:aarch64_cortex-a53-24.10.6
+      options: --user root
     steps:
       - uses: actions/checkout@v4
 
