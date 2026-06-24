@@ -5,56 +5,79 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
+env:
+  SDK_DIR: ${{ github.workspace }}/sdk
+
 jobs:
   build:
     name: mediatek/filogic (24.10.6)
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    container:
-      image: openwrt/sdk:mediatek-filogic-24.10.6
-      options: --user root
-    defaults:
-      run:
-        working-directory: /builder
     steps:
       - uses: actions/checkout@v4
 
-      - name: Add node feed and update packages feed
+      - name: Install OpenWRT build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential ccache curl file gawk \
+            g++-multilib gcc-multilib genisoimage git-core libdw-dev \
+            libelf-dev libncurses5-dev locales python3 python3-pyelftools \
+            rsync subversion swig unzip wget zstd
+
+      - name: Download and extract OpenWRT SDK
+        run: |
+          TARGET="mediatek/filogic"
+          VERSION="24.10.6"
+          BASE_URL="https://downloads.openwrt.org/releases/$VERSION/targets/$TARGET"
+
+          mkdir -p "$SDK_DIR"
+          cd "$SDK_DIR"
+
+          wget -nv "$BASE_URL/sha256sums" -O sha256sums
+
+          SDK_FILE=$(grep -oP 'openwrt-sdk-[^ ]+Linux-x86_64\.tar\.(xz|zst)' sha256sums | head -1)
+          echo "SDK: $SDK_FILE"
+
+          wget -nv "$BASE_URL/$SDK_FILE"
+          grep -F "$SDK_FILE" sha256sums | sha256sum -c
+
+          tar xf "$SDK_FILE" --strip=1 --no-same-owner
+          rm -f "$SDK_FILE" sha256sums
+
+      - name: Add node feed
+        working-directory: ${{ env.SDK_DIR }}
         run: |
           echo "src-git-full node https://github.com/nxhack/openwrt-node-packages.git" >> feeds.conf
           ./scripts/feeds update node
           ./scripts/feeds update packages
 
       - name: Install node packages and configure
+        working-directory: ${{ env.SDK_DIR }}
         run: |
           ./scripts/feeds install -a -p node
-          # feed install doesn't create symlinks in package/feeds/node/,
-          # so make them manually so the build system can find each package
           mkdir -p package/feeds/node
           for pkg in feeds/node/*/; do
             pkgname=$(basename "$pkg")
             [ -L "package/feeds/node/$pkgname" ] || \
               ln -sf "../../../feeds/node/$pkgname" "package/feeds/node/$pkgname"
           done
-          ls -la package/feeds/node/ | head -20
           make defconfig
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
           make defconfig
 
       - name: Build ALL node packages
+        working-directory: ${{ env.SDK_DIR }}
         run: |
           for pkg in feeds/node/*/; do
             pkgname=$(basename "$pkg")
             echo "=== Building $pkgname ==="
-            # Skip clean — fresh SDK container each run, and CONFIG_AUTOREMOVE=y
-            # handles cleanup after successful builds. Running clean+compile with
-            # -j$(nproc) can cause a race condition where both targets run in parallel.
             make "package/feeds/node/$pkgname/compile" -j$(nproc) \
               IGNORE_ERRORS=1 BUILD_LOG=1 V=s CONFIG_AUTOREMOVE=y || true
           done
 
       - name: List built packages, sign index, and prepare feed
+        working-directory: ${{ env.SDK_DIR }}
         run: |
           echo "=== IPK packages ==="
           find bin/packages/ -name "*.ipk" 2>/dev/null | sort || true
@@ -70,9 +93,9 @@ jobs:
           echo "=== Publish public key to feed ==="
           if [ -f key-build.pub ]; then
             cp key-build.pub bin/packages/aarch64_cortex-a53/
-            echo "✅ key-build.pub copied to feed root"
+            echo "key-build.pub copied to feed root"
           else
-            echo "ℹ️  No key-build.pub available (usign may not be in PATH)"
+            echo "No key-build.pub available"
           fi
           echo ""
           echo "=== Directory structure ==="
@@ -81,8 +104,8 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: \${{ secrets.GITHUB_TOKEN }}
-          publish_dir: /builder/bin/packages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ${{ env.SDK_DIR }}/bin/packages
           destination_dir: packages
 
       - name: Upload packages as artifact
@@ -90,11 +113,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ipk-packages-aarch64_cortex-a53
-          path: /builder/bin/packages/aarch64_cortex-a53/node/*.ipk
+          path: ${{ env.SDK_DIR }}/bin/packages/aarch64_cortex-a53/node/*.ipk
 
       - name: Upload build logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: build-logs
-          path: /builder/logs/
+          path: ${{ env.SDK_DIR }}/logs/

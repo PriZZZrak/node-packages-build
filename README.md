@@ -4,14 +4,15 @@ This repository contains a GitHub Actions workflow that builds **all Node.js pac
 
 ## How it works
 
-The workflow runs inside the official OpenWRT SDK container (`openwrt/sdk:aarch64_cortex-a53-24.10.6`) on GitHub Actions. It:
+The workflow runs on `ubuntu-latest` and manually downloads the OpenWRT SDK for mediatek/filogic 24.10.6, then builds all node packages. It:
 
-1. Configures the custom node feed
-2. Enables all packages (`CONFIG_ALL=y`)
-3. Builds everything with `IGNORE_ERRORS=1`
-4. Generates a `Packages.gz` index
-5. Publishes the repository to **GitHub Pages**
-6. Uploads built `.ipk` files and build logs as artifacts
+1. Installs build dependencies (compilers, python, etc.)
+2. Downloads the official OpenWRT SDK from `downloads.openwrt.org`
+3. Configures the custom node feed
+4. Builds each package individually with `IGNORE_ERRORS=1`
+5. Generates a `Packages.gz` index and signs it
+6. Publishes the repository to **GitHub Pages**
+7. Uploads built `.ipk` files and build logs as artifacts
 
 ## Usage
 
@@ -42,7 +43,7 @@ After the first successful workflow run:
 Once Pages is set up, add this line to `/etc/opkg/customfeeds.conf` on your OpenWRT router:
 
 ```
-src/gz custom_node https://prizzzrak.github.io/node-packages-build/packages/aarch64_cortex-a53/node
+src/gz custom_node https://YOUR_USERNAME.github.io/YOUR_REPO/packages/aarch64_cortex-a53/node
 ```
 
 Replace `YOUR_USERNAME` and `YOUR_REPO` with your GitHub username and repository name.
@@ -51,13 +52,13 @@ Then install the package signing key (required if `option check_signature 1` is 
 
 ```bash
 # Download and install the public key
-FINGERPRINT=$(wget -qO- https://prizzzrak.github.io/node-packages-build/packages/aarch64_cortex-a53/key-build.pub | \
+FINGERPRINT=$(wget -qO- https://YOUR_USERNAME.github.io/YOUR_REPO/packages/aarch64_cortex-a53/key-build.pub | \
   usign -F -p /dev/stdin)
 wget -qO /etc/opkg/keys/$FINGERPRINT \
-  https://prizzzrak.github.io/node-packages-build/packages/aarch64_cortex-a53/key-build.pub
+  https://YOUR_USERNAME.github.io/YOUR_REPO/packages/aarch64_cortex-a53/key-build.pub
 ```
 
-Replace `prizzzrak` and `node-packages-build` with your GitHub username and repository name.
+Replace `YOUR_USERNAME` and `YOUR_REPO` with your GitHub username and repository name.
 
 Then update and install:
 
@@ -81,9 +82,10 @@ See the [nxhack/openwrt-node-packages](https://github.com/nxhack/openwrt-node-pa
 
 The build workflow is at `.github/workflows/build.yml`. Key details:
 
-- **Container**: `openwrt/sdk:aarch64_cortex-a53-24.10.6`
+- **Runner**: `ubuntu-latest` (no container — fresh Ubuntu with modern glibc/gcc for Node.js 22 support)
+- **SDK**: Downloaded fresh from `downloads.openwrt.org/releases/24.10.6/targets/mediatek/filogic/`
 - **Feed**: `https://github.com/nxhack/openwrt-node-packages.git` (branch `openwrt-24.10`)
-- **Build**: All packages with `CONFIG_ALL=y` and `IGNORE_ERRORS=1`
+- **Build**: Per-package loop with `IGNORE_ERRORS=1` and `CONFIG_AUTOREMOVE=y`
 - **Index**: `Packages.gz` generated for opkg compatibility
 - **Deploy**: GitHub Pages via `peaceiris/actions-gh-pages@v3`
 
@@ -92,4 +94,4 @@ The build workflow is at `.github/workflows/build.yml`. Key details:
 - Build can take **1+ hours** depending on the number of packages
 - `IGNORE_ERRORS=1` ensures the build continues even if some packages fail
 - Only the `aarch64_cortex-a53` architecture is built (mediatek/filogic)
-- Package signing is enabled (automatic via `usign` + generated `key-build`)
+- Package signing is enabled (automatic via `usign` + SDK-generated `key-build`)
