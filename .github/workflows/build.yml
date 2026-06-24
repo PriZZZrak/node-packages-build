@@ -60,6 +60,18 @@ jobs:
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
           make defconfig
 
+      - name: Build core dependencies (libopenssl, zlib, icu, etc.)
+        working-directory: ${{ env.SDK_DIR }}
+        run: |
+          echo "=== Building node dependencies from packages feed ==="
+          for dep in libopenssl zlib libnghttp2 libcares icu icu-full-data; do
+            echo "--- Building dep: $dep ---"
+            make "package/feeds/packages/$dep/compile" -j$(nproc) \
+              IGNORE_ERRORS=1 BUILD_LOG=1 V=s CONFIG_AUTOREMOVE=y || true
+          done
+          echo "=== Running make package/index to generate feed metadata ==="
+          make package/index V=s || true
+
       - name: Build ALL node packages
         working-directory: ${{ env.SDK_DIR }}
         run: |
