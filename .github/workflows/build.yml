@@ -48,9 +48,12 @@ jobs:
       - name: Add node feed
         working-directory: ${{ env.SDK_DIR }}
         run: |
+          # Ensure standard feeds are included (SDK may only have feeds.conf.default)
+          if [ ! -f feeds.conf ]; then
+            cp feeds.conf.default feeds.conf
+          fi
           echo "src-git-full node https://github.com/nxhack/openwrt-node-packages.git" >> feeds.conf
-          ./scripts/feeds update node
-          ./scripts/feeds update packages
+          ./scripts/feeds update -a
 
       - name: Install node packages and configure
         working-directory: ${{ env.SDK_DIR }}
