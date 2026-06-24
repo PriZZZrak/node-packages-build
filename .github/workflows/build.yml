@@ -13,7 +13,6 @@ jobs:
       contents: write
     container:
       image: openwrt/sdk:aarch64_cortex-a53-24.10.6
-      options: --user root
     steps:
       - uses: actions/checkout@v4
 
@@ -23,7 +22,7 @@ jobs:
 
       - name: Add node feed
         run: |
-          echo "src-git-full node https://github.com/nxhack/openwrt-node-packages.git^79e700cce4df3373b9630d66f2bc23fda0568d5d" >> feeds.conf
+          echo "src-git-full node https://github.com/nxhack/openwrt-node-packages.git" >> feeds.conf
           ./scripts/feeds update node
 
       - name: Install node packages and configure
@@ -64,12 +63,6 @@ jobs:
           echo ""
           echo "=== Directory structure ==="
           find bin/packages/ -type d 2>/dev/null | sort || true
-
-      - name: Generate package signing key
-        run: |
-          usign -G -s key-build -p key-build.pub \
-            -c "node-packages-build key $(date +%Y-%m-%d)" 2>/dev/null || true
-          ls -la key-build key-build.pub 2>/dev/null || echo "usign not available"
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
