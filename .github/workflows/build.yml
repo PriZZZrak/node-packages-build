@@ -13,11 +13,12 @@ jobs:
       contents: write
     container:
       image: openwrt/sdk:aarch64_cortex-a53-24.10.6
+      options: --user root
+    defaults:
+      run:
+        working-directory: /builder
     steps:
-
-      - name: Setup SDK (via official setup.sh)
-        run: |
-          [ ! -d ./scripts ] && ./setup.sh
+      - uses: actions/checkout@v4
 
       - name: Add node feed
         run: |
@@ -67,7 +68,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: \${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./bin/packages
+          publish_dir: /builder/bin/packages
           destination_dir: packages
 
       - name: Upload packages as artifact
@@ -75,11 +76,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ipk-packages-aarch64_cortex-a53
-          path: bin/packages/aarch64_cortex-a53/node/*.ipk
+          path: /builder/bin/packages/aarch64_cortex-a53/node/*.ipk
 
       - name: Upload build logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: build-logs
-          path: ./logs/
+          path: /builder/logs/
