@@ -28,6 +28,15 @@ jobs:
       - name: Install node packages and configure
         run: |
           ./scripts/feeds install -a -p node
+          # feed install doesn't create symlinks in package/feeds/node/,
+          # so make them manually so the build system can find each package
+          mkdir -p package/feeds/node
+          for pkg in feeds/node/*/; do
+            pkgname=$(basename "$pkg")
+            [ -L "package/feeds/node/$pkgname" ] || \
+              ln -sf "../../../feeds/node/$pkgname" "package/feeds/node/$pkgname"
+          done
+          ls -la package/feeds/node/ | head -20
           make defconfig
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
           make defconfig
@@ -37,7 +46,8 @@ jobs:
           for pkg in feeds/node/*/; do
             pkgname=$(basename "$pkg")
             echo "=== Building $pkgname ==="
-            make "package/feeds/node/$pkgname/{clean,compile}" -j$(nproc) IGNORE_ERRORS=1 BUILD_LOG=1 V=s CONFIG_AUTOREMOVE=y || true
+            make "package/feeds/node/$pkgname/{clean,compile}" -j$(nproc) \
+              IGNORE_ERRORS=1 BUILD_LOG=1 V=s CONFIG_AUTOREMOVE=y || true
           done
 
       - name: List built packages, sign index, and prepare feed
