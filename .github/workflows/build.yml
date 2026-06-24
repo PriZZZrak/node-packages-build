@@ -19,7 +19,7 @@ jobs:
 
       - name: Setup SDK (via official setup.sh)
         run: |
-          [ ! -d ./scripts ] && /setup.sh
+          [ ! -d ./scripts ] && /builder/setup.sh
 
       - name: Add node feed
         run: |
