@@ -13,13 +13,11 @@ jobs:
       contents: write
     container:
       image: openwrt/sdk:aarch64_cortex-a53-24.10.6
-      options: --user root
     steps:
-      - uses: actions/checkout@v4
 
       - name: Setup SDK (via official setup.sh)
         run: |
-          [ ! -d ./scripts ] && /builder/setup.sh
+          [ ! -d ./scripts ] && ./setup.sh
 
       - name: Add node feed
         run: |
