@@ -20,10 +20,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Add node feed
+      - name: Add node feed and update packages feed
         run: |
           echo "src-git-full node https://github.com/nxhack/openwrt-node-packages.git" >> feeds.conf
           ./scripts/feeds update node
+          ./scripts/feeds update packages
 
       - name: Install node packages and configure
         run: |
@@ -42,6 +43,7 @@ jobs:
           make defconfig
 
       - name: Build ALL node packages
+        shell: bash
         run: |
           for pkg in feeds/node/*/; do
             pkgname=$(basename "$pkg")
