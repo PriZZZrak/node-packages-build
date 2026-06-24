@@ -17,99 +17,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup SDK buildroot
+      - name: Setup SDK (via official setup.sh)
         run: |
-          if [ ! -d ./scripts ]; then
-            SDK_FILE="openwrt-sdk-24.10.6-mediatek-filogic_gcc-13.3.0_musl.Linux-x86_64.tar.zst"
-            echo "Downloading SDK for mediatek/filogic..."
-            curl -sL "https://downloads.openwrt.org/releases/24.10.6/targets/mediatek/filogic/${SDK_FILE}" -o "/tmp/${SDK_FILE}"
-            echo "Extracting SDK..."
-            tar --zstd -xf "/tmp/${SDK_FILE}" --strip=1 --no-same-owner
-            rm -f "/tmp/${SDK_FILE}"
-            echo "SDK setup complete."
-          fi
+          [ ! -d ./scripts ] && ./setup.sh
 
-      - name: Setup custom feeds
+      - name: Add node feed
         run: |
-          # Copy default feeds (packages, luci, routing, telephony) to provide
-          # libopenssl, libcares, libnghttp2 etc. that node needs
-          if [ ! -f feeds.conf ]; then
-            cp feeds.conf.default feeds.conf 2>/dev/null || true
-          fi
           echo "src-git-full node https://github.com/nxhack/openwrt-node-packages.git^79e700cce4df3373b9630d66f2bc23fda0568d5d" >> feeds.conf
-          ./scripts/feeds update -a
-          # Install packages that node depends on (from the packages feed)
-          ./scripts/feeds install libopenssl libcares libnghttp2 2>/dev/null || true
-          rm -rf package/feeds/packages/node*
+          ./scripts/feeds update node
+
+      - name: Install node packages and configure
+        run: |
           ./scripts/feeds install -a -p node
-
-      - name: Generate package signing key
-        run: |
-          if [ -f staging_dir/host/bin/usign ] && [ ! -f key-build ]; then
-            staging_dir/host/bin/usign -G -s key-build -p key-build.pub \
-              -c "node-packages-build key $(date +%Y-%m-%d)"
-            echo "✅ Signing key generated: key-build + key-build.pub"
-            echo "Fingerprint: $(staging_dir/host/bin/usign -F -p key-build.pub)"
-          else
-            echo "ℹ️  usign not found or key already exists"
-            ls -la key-build 2>/dev/null || echo "key-build missing"
-          fi
-
-      - name: Configure ALL packages
-        run: |
           make defconfig
-          sed -i 's/# CONFIG_ALL is not set/CONFIG_ALL=y/' .config 2>/dev/null || \
-            echo 'CONFIG_ALL=y' >> .config
-          make defconfig
-          echo 'CONFIG_NODEJS_22=y' >> .config
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
           make defconfig
-          mkdir -p staging_dir/hostpkg
-
-
-
-      - name: Prepare node source (Node.js 22 — no C++20 patches needed)
-        run: |
-          # Extract node source so the build system can find it
-          make package/feeds/node/node/prepare V=s 2>&1 || true
 
       - name: Build ALL node packages
         run: |
           for pkg in feeds/node/*/; do
             pkgname=$(basename "$pkg")
             echo "=== Building $pkgname ==="
-            make "package/feeds/node/$pkgname/compile" -j$(nproc) IGNORE_ERRORS=1 BUILD_LOG=1 V=s CONFIG_AUTOREMOVE=y || true
+            make "package/feeds/node/$pkgname/{clean,compile}" -j$(nproc) IGNORE_ERRORS=1 BUILD_LOG=1 V=s CONFIG_AUTOREMOVE=y || true
           done
-
-      - name: Debug - verify OpenSSL & node headers, rebuild zigbee2mqtt
-        if: always()
-        run: |
-          echo "=== Checking OpenSSL staging headers ==="
-          find staging_dir/ -name "bio.h" -path "*/openssl/*" 2>/dev/null | head -5
-          if [ -z "$(find staging_dir/ -name 'bio.h' -path '*/openssl/*' 2>/dev/null)" ]; then
-            echo "❌ MISSING: OpenSSL headers in staging"
-          else
-            echo "✅ OpenSSL headers found in staging"
-          fi
-          echo ""
-          echo "=== Checking node staging headers ==="
-          find staging_dir/ -name "node.h" -path "*/include/node/*" 2>/dev/null | head -5
-          if [ -z "$(find staging_dir/ -name 'node.h' -path '*/include/node/*' 2>/dev/null)" ]; then
-            echo "❌ MISSING: node.h in staging — native modules cannot compile!"
-          else
-            echo "✅ node headers found in staging"
-          fi
-          echo ""
-          echo "=== ARCH / NODEJS_CPU ==="
-          grep "^CONFIG_ARCH\|^CONFIG_TARGET_ARCH" .config 2>/dev/null | head -5
-          echo ""
-          echo "=== Retrying node-zigbee2mqtt with V=99 ==="
-          make package/feeds/node/node-zigbee2mqtt/compile V=99 2>&1 || true
-          echo ""
-          echo "=== Also checking bufferutil and utf-8-validate (key deps) ==="
-          make package/feeds/node/node-bufferutil/compile V=99 2>&1 || true
-          echo "---"
-          make package/feeds/node/node-utf-8-validate/compile V=99 2>&1 || true
 
       - name: List built packages, sign index, and prepare feed
         run: |
@@ -118,7 +48,7 @@ jobs:
           echo ""
           echo "Total: $(find bin/packages/ -name '*.ipk' 2>/dev/null | wc -l)"
           echo ""
-          echo "=== Package index (generated by make world) ==="
+          echo "=== Package index ==="
           find bin/packages/ -name "Packages*" 2>/dev/null || true
           echo ""
           echo "=== Package signature ==="
@@ -129,16 +59,22 @@ jobs:
             cp key-build.pub bin/packages/aarch64_cortex-a53/
             echo "✅ key-build.pub copied to feed root"
           else
-            echo "❌ No key-build.pub available"
+            echo "ℹ️  No key-build.pub available (usign may not be in PATH)"
           fi
           echo ""
           echo "=== Directory structure ==="
           find bin/packages/ -type d 2>/dev/null | sort || true
 
+      - name: Generate package signing key
+        run: |
+          usign -G -s key-build -p key-build.pub \
+            -c "node-packages-build key $(date +%Y-%m-%d)" 2>/dev/null || true
+          ls -la key-build key-build.pub 2>/dev/null || echo "usign not available"
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: \${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./bin/packages
           destination_dir: packages
 
