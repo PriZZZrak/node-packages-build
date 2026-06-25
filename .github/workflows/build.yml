@@ -99,7 +99,7 @@ jobs:
             pkgname=$(basename "$pkg")
             echo "=== Building $pkgname ==="
             make "package/feeds/node/$pkgname/compile" -j$(nproc) \
-              IGNORE_ERRORS=1 BUILD_LOG=1 V=s CONFIG_AUTOREMOVE=y || true
+              IGNORE_ERRORS=1 BUILD_LOG=1 CONFIG_AUTOREMOVE=y || true
           done
 
       - name: Generate package index and signing
