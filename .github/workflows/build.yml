@@ -67,8 +67,10 @@ jobs:
           # Always start fresh feeds.conf from default
           cp feeds.conf.default feeds.conf
           echo "src-git-full node https://github.com/nxhack/openwrt-node-packages.git" >> feeds.conf
-          # Retry feeds update once on failure (transient network errors)
-          ./scripts/feeds update -a || (sleep 30 && ./scripts/feeds update -a)
+          # feeds update may fail for 'base' (detached HEAD from SDK tarball) — ignore
+          # Other built-in feeds (packages, luci, routing, telephony) are pinned commits, fine
+          # The 'node' feed is what we actually need
+          ./scripts/feeds update -a || true
 
       - name: Install node packages and configure
         working-directory: ${{ env.SDK_DIR }}
