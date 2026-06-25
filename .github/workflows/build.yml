@@ -32,14 +32,6 @@ jobs:
           path: ${{ env.SDK_DIR }}
           key: openwrt-sdk-24.10.6-mediatek-filogic-1
 
-      - name: Cache ccache
-        uses: actions/cache@v4
-        with:
-          path: ~/.ccache
-          key: ccache-${{ github.run_id }}
-          restore-keys: |
-            ccache-
-
       - name: Download and extract OpenWRT SDK
         if: steps.sdk-cache.outputs.cache-hit != 'true'
         run: |
@@ -83,9 +75,11 @@ jobs:
         working-directory: ${{ env.SDK_DIR }}
         run: |
           ./scripts/feeds install -a
-          # Force reinstall from node feed to override packages feed's node (v20 → v22 default)
+          # Remove packages feed's node (v20) so nxhack's node (v22 default) wins
+          rm -rf package/feeds/packages/node*
           ./scripts/feeds install -f -p node
           make defconfig
+          echo 'CONFIG_NODEJS_24=y' >> .config
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
           echo 'CONFIG_CCACHE=y' >> .config
           make defconfig
