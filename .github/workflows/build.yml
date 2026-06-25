@@ -80,8 +80,6 @@ jobs:
           rm -rf package/feeds/packages/node*
           ./scripts/feeds install -f -a -p node
           make defconfig
-          sed -i 's/# CONFIG_ALL is not set/CONFIG_ALL=y/' .config 2>/dev/null || \
-            echo 'CONFIG_ALL=y' >> .config
           echo 'CONFIG_NODEJS_24=y' >> .config
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
           echo 'CONFIG_CCACHE=y' >> .config
@@ -91,8 +89,14 @@ jobs:
         working-directory: ${{ env.SDK_DIR }}
         run: |
           rm -rf bin/
-          echo "=== Building all packages ==="
-          make -j$(nproc) IGNORE_ERRORS=1 BUILD_LOG=1 V=0 CONFIG_AUTOREMOVE=y
+          echo "=== Building all node feed packages ==="
+          targets=""
+          for d in package/feeds/node/*/; do
+            pkg="$(basename $d)"
+            targets="$targets package/feeds/node/$pkg/compile"
+          done
+          make $targets -j$(nproc) IGNORE_ERRORS=1 \
+            BUILD_LOG=1 V=0 CONFIG_AUTOREMOVE=y
 
       - name: Generate package index and signing
         working-directory: ${{ env.SDK_DIR }}
