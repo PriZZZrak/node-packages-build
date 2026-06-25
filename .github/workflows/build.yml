@@ -25,7 +25,23 @@ jobs:
             libelf-dev libncurses5-dev locales python3 python3-pyelftools \
             rsync subversion swig unzip wget zstd
 
+      - name: Cache OpenWRT SDK
+        id: sdk-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.SDK_DIR }}
+          key: openwrt-sdk-24.10.6-mediatek-filogic-1
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ github.run_id }}
+          restore-keys: |
+            ccache-
+
       - name: Download and extract OpenWRT SDK
+        if: steps.sdk-cache.outputs.cache-hit != 'true'
         run: |
           TARGET="mediatek/filogic"
           VERSION="24.10.6"
@@ -45,6 +61,14 @@ jobs:
           tar xf "$SDK_FILE" --strip=1 --no-same-owner
           rm -f "$SDK_FILE" sha256sums
 
+      - name: Cache SDK dl directory
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.SDK_DIR }}/dl
+          key: dl-cache-${{ github.run_id }}
+          restore-keys: |
+            dl-cache-
+
       - name: Add node feed
         working-directory: ${{ env.SDK_DIR }}
         run: |
@@ -61,7 +85,10 @@ jobs:
           ./scripts/feeds install -a
           make defconfig
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
+          echo 'CONFIG_CCACHE=y' >> .config
           make defconfig
+          # Generate signing key for package index
+          ./staging_dir/host/bin/usign -G -s key-build -p key-build.pub -m "Node Packages"
 
       - name: Build core dependencies (libopenssl, zlib, icu, etc.)
         working-directory: ${{ env.SDK_DIR }}
@@ -85,7 +112,7 @@ jobs:
               IGNORE_ERRORS=1 BUILD_LOG=1 V=s CONFIG_AUTOREMOVE=y || true
           done
 
-      - name: List built packages, sign index, and prepare feed
+      - name: Generate package index and signing
         working-directory: ${{ env.SDK_DIR }}
         run: |
           echo "=== IPK packages ==="
@@ -100,12 +127,8 @@ jobs:
           find bin/packages/ -name "*.sig" 2>/dev/null || echo "No .sig files found"
           echo ""
           echo "=== Publish public key to feed ==="
-          if [ -f key-build.pub ]; then
-            cp key-build.pub bin/packages/aarch64_cortex-a53/
-            echo "key-build.pub copied to feed root"
-          else
-            echo "No key-build.pub available"
-          fi
+          cp key-build.pub bin/packages/aarch64_cortex-a53/
+          echo "key-build.pub copied to feed root"
           echo ""
           echo "=== Directory structure ==="
           find bin/packages/ -type d 2>/dev/null | sort || true
