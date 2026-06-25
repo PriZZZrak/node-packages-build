@@ -847,45 +847,6 @@ Size: 27993
 SHA256sum: d6121d4e480370ec89393f0973bdd5f2478b4a1f8bc0b499d3e01764c8b9dcb4
 Description:  Arduino Firmata protocol (http://firmata.org) implementation on Node.js.
 
-Package: node-cylon-firmata
-Version: 0.24.0-r4
-Depends: libc, node, node-npm, node-cylon-gpio, node-cylon-i2c, node-arduino-firmata
-License: Apache-2.0
-Section: lang
-URL: https://www.npmjs.org/package/cylon-firmata
-Architecture: aarch64_cortex-a53
-Installed-Size: 122880
-Filename: node-cylon-firmata_0.24.0-r4_aarch64_cortex-a53.ipk
-Size: 16021
-SHA256sum: b461d112e7e2041609a9cbece24d76bb344f92fa3bc6264c1d03a7346c4a40df
-Description:  CylonJS - Firmata
-
-Package: node-cylon-gpio
-Version: 0.24.0-r4
-Depends: libc, node, node-npm, node-cylon
-License: Apache-2.0
-Section: lang
-URL: https://www.npmjs.org/package/cylon-firmata
-Architecture: aarch64_cortex-a53
-Installed-Size: 286720
-Filename: node-cylon-gpio_0.24.0-r4_aarch64_cortex-a53.ipk
-Size: 133492
-SHA256sum: 7313bc7ce82b5f386b3b8cf8e34cbd7b37c59c57f50efa74c05f80d0c4101a58
-Description:  CylonJS - GPIO
-
-Package: node-cylon-i2c
-Version: 0.26.1-r26
-Depends: libc, node, node-cylon
-License: Apache-2.0
-Section: lang
-URL: https://www.npmjs.org/package/cylon-i2c
-Architecture: aarch64_cortex-a53
-Installed-Size: 1044480
-Filename: node-cylon-i2c_0.26.1-r26_aarch64_cortex-a53.ipk
-Size: 782927
-SHA256sum: 4aa3395a2469dee7e5abf61a281e5b004d054a5b1d7ff42ef5d010841bb1e30c
-Description:  Cylon.js drivers for i2c devices
-
 Package: node-cylon
 Version: 0.24.0-r4
 Depends: libc, node, node-npm

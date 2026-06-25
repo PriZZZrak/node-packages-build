@@ -534,6 +534,60 @@ Size: 27729
 SHA256sum: 0928988c19250bf7fcd7205f07b283b07774ca8751ee004fdc63dcfa971dbdbf
 Description:  Run scripts that set and use environment variables across platforms
 
+Package: node-cylon-firmata
+Version: 0.24.0-r26
+Depends: libc, node, node-cylon, node-firmata
+Source: feeds/node/node-cylon-firmata
+SourceName: node-cylon-firmata
+License: Apache-2.0
+LicenseFiles: LICENSE
+Section: lang
+SourceDateEpoch: 1718585226
+URL: https://www.npmjs.org/package/cylon-firmata
+Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
+Architecture: aarch64_cortex-a53
+Installed-Size: 122880
+Filename: node-cylon-firmata_0.24.0-r26_aarch64_cortex-a53.ipk
+Size: 16122
+SHA256sum: 6be75712858c0f5d207603b6843446fe988f36f0847aab9ad4aca08669d58cf1
+Description:  Cylon module for Arduino and other microcontrollers using the Firmata protocol
+
+Package: node-cylon-gpio
+Version: 0.30.1-r14
+Depends: libc, node, node-cylon
+Source: feeds/node/node-cylon-gpio
+SourceName: node-cylon-gpio
+License: Apache-2.0
+LicenseFiles: LICENSE
+Section: lang
+SourceDateEpoch: 1718585226
+URL: https://www.npmjs.org/package/cylon-gpio
+Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
+Architecture: aarch64_cortex-a53
+Installed-Size: 286720
+Filename: node-cylon-gpio_0.30.1-r14_aarch64_cortex-a53.ipk
+Size: 133303
+SHA256sum: 0f9fd7ffb1f4b3b4f845cf7a9eed79bdc688797c24eb9a80cb16551c3e696fc2
+Description:  Cylon module for General Purpose Input/Output (GPIO)
+
+Package: node-cylon-i2c
+Version: 0.26.1-r26
+Depends: libc, node, node-cylon
+Source: feeds/node/node-cylon-i2c
+SourceName: node-cylon-i2c
+License: Apache-2.0
+LicenseFiles: LICENSE
+Section: lang
+SourceDateEpoch: 1718585226
+URL: https://www.npmjs.org/package/cylon-i2c
+Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
+Architecture: aarch64_cortex-a53
+Installed-Size: 1044480
+Filename: node-cylon-i2c_0.26.1-r26_aarch64_cortex-a53.ipk
+Size: 782927
+SHA256sum: 4aa3395a2469dee7e5abf61a281e5b004d054a5b1d7ff42ef5d010841bb1e30c
+Description:  Cylon.js drivers for i2c devices
+
 Package: node-deasync-promise
 Version: 1.0.1-r3
 Depends: libc, node, node-deasync
