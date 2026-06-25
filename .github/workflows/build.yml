@@ -85,22 +85,25 @@ jobs:
           echo 'CONFIG_CCACHE=y' >> .config
           make defconfig
 
-      - name: Build ALL node packages
+      - name: Build node (v24) with verbose logs
         working-directory: ${{ env.SDK_DIR }}
         run: |
-          for pkg in feeds/node/*/; do
-            pkgname=$(basename "$pkg")
-            echo "=== Building $pkgname ==="
-            make "package/feeds/node/$pkgname/compile" -j$(nproc) \
-              IGNORE_ERRORS=1 BUILD_LOG=1 CONFIG_AUTOREMOVE=y || true
-          done
+          rm -rf bin/
+          echo "=== Building node ==="
+          make "package/feeds/node/node/compile" -j1 V=s \
+            BUILD_LOG=1 CONFIG_AUTOREMOVE=y 2>&1 || true
 
       - name: Generate package index and signing
         working-directory: ${{ env.SDK_DIR }}
         run: |
-          # Copy committed signing keys from repo checkout
-          cp -v ${{ github.workspace }}/key-build . 2>/dev/null || true
-          cp -v ${{ github.workspace }}/key-build.pub . 2>/dev/null || true
+          # Decode private signing key from GitHub Secret (never committed to repo)
+          if [ -n "${{ secrets.OPKG_SIGN_KEY }}" ]; then
+            echo "${{ secrets.OPKG_SIGN_KEY }}" | base64 -d > key-build
+          else
+            echo "WARNING: OPKG_SIGN_KEY secret not set — packages will NOT be signed"
+          fi
+          # Copy public key from repo checkout (safe to commit — it's public)
+          cp -v ${{ github.workspace }}/key-build.pub .
 
           echo "=== Generating package index ==="
           make package/index V=s || true
