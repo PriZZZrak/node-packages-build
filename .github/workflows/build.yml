@@ -64,12 +64,11 @@ jobs:
       - name: Add node feed
         working-directory: ${{ env.SDK_DIR }}
         run: |
-          # Ensure standard feeds are included (SDK may only have feeds.conf.default)
-          if [ ! -f feeds.conf ]; then
-            cp feeds.conf.default feeds.conf
-          fi
+          # Always start fresh feeds.conf from default
+          cp feeds.conf.default feeds.conf
           echo "src-git-full node https://github.com/nxhack/openwrt-node-packages.git" >> feeds.conf
-          ./scripts/feeds update -a
+          # Retry feeds update once on failure (transient network errors)
+          ./scripts/feeds update -a || (sleep 30 && ./scripts/feeds update -a)
 
       - name: Install node packages and configure
         working-directory: ${{ env.SDK_DIR }}
@@ -83,8 +82,6 @@ jobs:
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
           echo 'CONFIG_CCACHE=y' >> .config
           make defconfig
-          # Generate signing key for package index
-          ./staging_dir/host/bin/usign -G -s key-build -p key-build.pub -m "Node Packages"
 
       - name: Build ALL node packages
         working-directory: ${{ env.SDK_DIR }}
@@ -99,6 +96,10 @@ jobs:
       - name: Generate package index and signing
         working-directory: ${{ env.SDK_DIR }}
         run: |
+          # Copy committed signing keys from repo checkout
+          cp -v ${{ github.workspace }}/key-build . 2>/dev/null || true
+          cp -v ${{ github.workspace }}/key-build.pub . 2>/dev/null || true
+
           echo "=== Generating package index ==="
           make package/index V=s || true
           echo ""
