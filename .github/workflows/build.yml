@@ -83,24 +83,14 @@ jobs:
         working-directory: ${{ env.SDK_DIR }}
         run: |
           ./scripts/feeds install -a
+          # Force reinstall from node feed to override packages feed's node (v20 → v22 default)
+          ./scripts/feeds install -f -p node
           make defconfig
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
           echo 'CONFIG_CCACHE=y' >> .config
           make defconfig
           # Generate signing key for package index
           ./staging_dir/host/bin/usign -G -s key-build -p key-build.pub -m "Node Packages"
-
-      - name: Build core dependencies (libopenssl, zlib, icu, etc.)
-        working-directory: ${{ env.SDK_DIR }}
-        run: |
-          echo "=== Building node dependencies from packages feed ==="
-          for dep in libopenssl zlib libnghttp2 libcares icu icu-full-data; do
-            echo "--- Building dep: $dep ---"
-            make "package/feeds/packages/$dep/compile" -j$(nproc) \
-              IGNORE_ERRORS=1 BUILD_LOG=1 V=s CONFIG_AUTOREMOVE=y || true
-          done
-          echo "=== Running make package/index to generate feed metadata ==="
-          make package/index V=s || true
 
       - name: Build ALL node packages
         working-directory: ${{ env.SDK_DIR }}
@@ -115,6 +105,9 @@ jobs:
       - name: Generate package index and signing
         working-directory: ${{ env.SDK_DIR }}
         run: |
+          echo "=== Generating package index ==="
+          make package/index V=s || true
+          echo ""
           echo "=== IPK packages ==="
           find bin/packages/ -name "*.ipk" 2>/dev/null | sort || true
           echo ""
