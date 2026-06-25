@@ -80,6 +80,8 @@ jobs:
           rm -rf package/feeds/packages/node*
           ./scripts/feeds install -f -a -p node
           make defconfig
+          sed -i 's/# CONFIG_ALL is not set/CONFIG_ALL=y/' .config 2>/dev/null || \
+            echo 'CONFIG_ALL=y' >> .config
           echo 'CONFIG_NODEJS_24=y' >> .config
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
           echo 'CONFIG_CCACHE=y' >> .config
