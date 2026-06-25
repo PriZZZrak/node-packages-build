@@ -78,7 +78,7 @@ jobs:
           ./scripts/feeds install -a
           # Remove packages feed's node (v20) so nxhack's node (v22 default) wins
           rm -rf package/feeds/packages/node*
-          ./scripts/feeds install -f -p node
+          ./scripts/feeds install -f -a -p node
           make defconfig
           echo 'CONFIG_NODEJS_24=y' >> .config
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
