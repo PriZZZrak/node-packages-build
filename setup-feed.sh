@@ -14,7 +14,7 @@ echo "=== Получение Packages.sig ==="
 wget -qO /tmp/Packages.sig "$URL/node/Packages.sig"
 
 echo "=== Извлечение fingerprint из подписи ==="
-FINGERPRINT=$(head -1 /tmp/Packages.sig | grep -oP 'key \K[0-9a-f]+')
+FINGERPRINT=$(head -1 /tmp/Packages.sig | sed 's/.*key //')
 echo "Fingerprint (из Packages.sig): $FINGERPRINT"
 
 echo "=== Получение публичного ключа ==="
