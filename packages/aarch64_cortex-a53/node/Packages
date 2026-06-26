@@ -254,8 +254,8 @@ URL: https://www.npmjs.org/package/binaryjs
 Architecture: aarch64_cortex-a53
 Installed-Size: 1136640
 Filename: node-binaryjs_0.2.1-r14_aarch64_cortex-a53.ipk
-Size: 309986
-SHA256sum: 5a32a3ebf99dacd6ff7a6ca420c54869c2985d00972c79364f99815710791da1
+Size: 309990
+SHA256sum: bf86f87a8742799de18f067eb1b4286b0b11bc0f5a20127fdaf4b07b056408e3
 Description:  Node binary websocket streaming made easy
 
 Package: node-bleacon
@@ -606,8 +606,8 @@ URL: https://www.npmjs.org/package/node-fuse-bindings
 Architecture: aarch64_cortex-a53
 Installed-Size: 8550400
 Filename: node-fuse-bindings_2.12.4-r7_aarch64_cortex-a53.ipk
-Size: 1880375
-SHA256sum: cee4db33f5aa85808528495d52783be1441f2593176918982c7e0d0de8a3cc5d
+Size: 1880393
+SHA256sum: 128ac7d05886ae3015447139917f9e6d9da8177a75f1cd9550b692c8bd4eeb37
 Description:  Fully maintained fuse bindings for Node that aims to cover the entire FUSE api
 
 Package: node-gulp
@@ -1321,8 +1321,8 @@ URL: https://www.npmjs.com/package/node-pty
 Architecture: aarch64_cortex-a53
 Installed-Size: 113336320
 Filename: node-pty_1.1.0-r1_aarch64_cortex-a53.ipk
-Size: 19847965
-SHA256sum: fa3796464a43709932b91a72474790fd29ba3cd29eaa62cfae3cf2ac56dac782
+Size: 19852046
+SHA256sum: 93060308642bf5d67423073b6f7fef6152328dce4007a669de54cc8229cc0deb
 Description:  forkpty(3) bindings for node.js. This allows you to fork processes with pseudoterminal file descriptors. It returns a terminal object which allows reads and writes.
 
 Package: node-raw-socket
@@ -1374,8 +1374,8 @@ URL: https://flows.nodered.org/node/node-red-contrib-modbus
 Architecture: aarch64_cortex-a53
 Installed-Size: 16435200
 Filename: node-red-contrib-modbus_5.45.2-r1_aarch64_cortex-a53.ipk
-Size: 5203031
-SHA256sum: 0891ac3af2276c5177507f92d43c54c32de0b514fb2f68d460d589358fea0b48
+Size: 5202984
+SHA256sum: 46aad837dbd7b5ca140119beed98fd56e4858ed6eae79f7e7d48011fe42d0fa1
 Description:  The all in one Modbus TCP and Serial contribution package for Node-RED. Based on modbus-serial with TCP, C701, Telnet, Serial, RTU buffered, and ASCII.
 
 Package: node-red-dashboard
@@ -1634,8 +1634,8 @@ URL: https://www.npmjs.org/package/sqlite3
 Architecture: aarch64_cortex-a53
 Installed-Size: 10680320
 Filename: node-sqlite3_6.0.1-r1_aarch64_cortex-a53.ipk
-Size: 2685269
-SHA256sum: 0d308a921ffca85171c5e02d583bfa931764056c5f8987d0682d95e7e9ff7c88
+Size: 2685267
+SHA256sum: 67a6ab436cc90a3119b715e4d065cbe2182d6387198c8d2b8626ac7778af0c70
 Description:  Asynchronous, non-blocking SQLite3 bindings for Node.js
 
 Package: node-static
