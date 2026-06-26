@@ -1,2 +1,5 @@
 logs/
 .omo
+# Private signing key — stored in GitHub Secrets (OPKG_SIGN_KEY), never commit
+key-build
+key-build.secret.b64
