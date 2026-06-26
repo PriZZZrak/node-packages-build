@@ -15,7 +15,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install OpenWRT build dependencies
         run: |
@@ -132,7 +132,7 @@ jobs:
           find bin/packages/ -type d 2>/dev/null | sort || true
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ${{ env.SDK_DIR }}/bin/packages
@@ -140,14 +140,14 @@ jobs:
 
       - name: Upload packages as artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ipk-packages-aarch64_cortex-a53
           path: ${{ env.SDK_DIR }}/bin/packages/aarch64_cortex-a53/node/*.ipk
 
       - name: Upload build logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-logs
           path: ${{ env.SDK_DIR }}/logs/
