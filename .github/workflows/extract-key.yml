@@ -1,0 +1,60 @@
+name: Extract OPKG_SIGN_KEY
+on:
+  workflow_dispatch:  # только ручной запуск
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Recover key files from secret
+        run: |
+          set -e
+
+          # 1. key-build — текст формата "untrusted comment: private key\n<base64>\n"
+          echo "${{ secrets.OPKG_SIGN_KEY }}" | base64 -d > key-build
+          chmod 600 key-build
+
+          # 2. Декодируем base64 payload (104 байта raw)
+          RAW_B64=$(tail -1 key-build)
+          RAW_BIN=$(echo "$RAW_B64" | base64 -d | xxd -p | tr -d '\n')
+          echo "Raw hex: $RAW_BIN"
+          echo "Raw bytes: $(echo "$RAW_BIN" | wc -c | tr -d ' ')"
+
+          # 3. Структура privkey (104 байта):
+          #    EdBK(4) + kdfrounds(4) + salt(16) + checksum(8) + fingerprint(8) + seckey(64)
+          #    seckey[0:32] = scalar, seckey[32:64] = pubkey
+          #    fingerprint = hex[64:80] (байты 32-39)
+          #    pubkey      = hex[144:208] (байты 72-103)
+
+          FINGERPRINT_HEX=$(echo "$RAW_BIN" | cut -c65-80)
+          PUBKEY_HEX=$(echo "$RAW_BIN" | cut -c145-208)
+
+          echo "Fingerprint: $FINGERPRINT_HEX"
+          echo "Pubkey:      $PUBKEY_HEX"
+
+          # 4. Собираем key-build.pub: "Ed"(2B) + fingerprint(8B) + pubkey(32B) = 42B
+          PUB_RAW=$(printf '4564')"$FINGERPRINT_HEX""$PUBKEY_HEX"
+          PUB_B64=$(echo "$PUB_RAW" | xxd -r -p | base64 -w0)
+          {
+            echo "untrusted comment: public key"
+            echo "$PUB_B64"
+          } > key-build.pub
+          echo "--- key-build.pub ---"
+          cat key-build.pub
+
+          # 5. key-build.secret.b64 = сам OPKG_SIGN_KEY (base64 от текстового key-build)
+          echo "${{ secrets.OPKG_SIGN_KEY }}" > key-build.secret.b64
+          echo "--- key-build.secret.b64 (первые 80 символов) ---"
+          head -c 80 key-build.secret.b64
+          echo
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: key-files
+          path: |
+            key-build
+            key-build.pub
+            key-build.secret.b64
