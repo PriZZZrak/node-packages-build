@@ -131,6 +131,16 @@ jobs:
           echo "=== Directory structure ==="
           find bin/packages/ -type d 2>/dev/null | sort || true
 
+      - name: Remove non-node feeds before deploy
+        working-directory: ${{ env.SDK_DIR }}
+        run: |
+          echo "=== Removing non-node feeds (available in official OpenWRT repos) ==="
+          ls -d bin/packages/aarch64_cortex-a53/*/
+          rm -rf bin/packages/aarch64_cortex-a53/{base,luci,packages,routing,telephony}
+          echo ""
+          echo "=== Remaining structure ==="
+          find bin/packages/aarch64_cortex-a53/ -type d | sort
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
