@@ -12,6 +12,7 @@ jobs:
   build:
     name: mediatek/filogic (24.10.6)
     runs-on: ubuntu-latest
+    timeout-minutes: 480
     permissions:
       contents: write
     steps:
@@ -80,7 +81,7 @@ jobs:
           rm -rf package/feeds/packages/node*
           ./scripts/feeds install -f -a -p node
           make defconfig
-          echo 'CONFIG_NODEJS_24=y' >> .config
+          echo 'CONFIG_NODEJS_22=y' >> .config
           echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
           echo 'CONFIG_CCACHE=y' >> .config
           make defconfig
