@@ -99,7 +99,7 @@ The build workflow is at `.github/workflows/build.yml`. Key details:
 - **Runner**: `ubuntu-latest` (no container, fresh Ubuntu with modern glibc/gcc for Node.js 22 support)
 - **Timeout**: 480 minutes (8 hours)
 - **SDK**: Downloaded fresh from `downloads.openwrt.org/releases/24.10.6/targets/mediatek/filogic/`
-- **Feed**: `https://github.com/nxhack/openwrt-node-packages.git` (branch `openwrt-24.10`)
+- **Feed**: `https://github.com/nxhack/openwrt-node-packages.git` (default branch — `master`)
 - **Node.js version**: `CONFIG_NODEJS_22=y` (Active LTS)
 - **Build**: Per-package loop with `IGNORE_ERRORS=1` and `CONFIG_AUTOREMOVE=y`
 - **Index**: `Packages.gz` generated, signed with `usign`, public key published alongside packages
