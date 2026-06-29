@@ -65,7 +65,7 @@ jobs:
         run: |
           # Always start fresh feeds.conf from default
           cp feeds.conf.default feeds.conf
-          echo "src-git-full node https://github.com/nxhack/openwrt-node-packages.git^openwrt-24.10" >> feeds.conf
+          echo "src-git-full node https://github.com/nxhack/openwrt-node-packages.git" >> feeds.conf
           # feeds update may fail for 'base' (detached HEAD from SDK tarball) — ignore
           # Other built-in feeds (packages, luci, routing, telephony) are pinned commits, fine
           # The 'node' feed is what we actually need
