@@ -9,6 +9,9 @@ jobs:
   check:
     name: Check nxhack/openwrt-node-packages
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
     steps:
       - uses: actions/checkout@v5
 
