@@ -65,7 +65,7 @@ jobs:
         run: |
           # Always start fresh feeds.conf from default
           cp feeds.conf.default feeds.conf
-          echo "src-git-full node https://github.com/nxhack/openwrt-node-packages.git" >> feeds.conf
+          echo "src-git-full node https://github.com/nxhack/openwrt-node-packages.git^openwrt-24.10" >> feeds.conf
           # feeds update may fail for 'base' (detached HEAD from SDK tarball) — ignore
           # Other built-in feeds (packages, luci, routing, telephony) are pinned commits, fine
           # The 'node' feed is what we actually need
@@ -96,6 +96,16 @@ jobs:
           done
           make $targets -j$(nproc) IGNORE_ERRORS=1 \
             BUILD_LOG=1 V=0 CONFIG_AUTOREMOVE=y
+
+      - name: Remove non-node feeds before deploy
+        working-directory: ${{ env.SDK_DIR }}
+        run: |
+          echo "=== Removing non-node feeds (available in official OpenWRT repos) ==="
+          ls -d bin/packages/aarch64_cortex-a53/*/
+          rm -rf bin/packages/aarch64_cortex-a53/{base,luci,packages,routing,telephony}
+          echo ""
+          echo "=== Remaining structure ==="
+          find bin/packages/aarch64_cortex-a53/ -type d | sort
 
       - name: Generate package index and signing
         working-directory: ${{ env.SDK_DIR }}
@@ -129,16 +139,6 @@ jobs:
           echo ""
           echo "=== Directory structure ==="
           find bin/packages/ -type d 2>/dev/null | sort || true
-
-      - name: Remove non-node feeds before deploy
-        working-directory: ${{ env.SDK_DIR }}
-        run: |
-          echo "=== Removing non-node feeds (available in official OpenWRT repos) ==="
-          ls -d bin/packages/aarch64_cortex-a53/*/
-          rm -rf bin/packages/aarch64_cortex-a53/{base,luci,packages,routing,telephony}
-          echo ""
-          echo "=== Remaining structure ==="
-          find bin/packages/aarch64_cortex-a53/ -type d | sort
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
