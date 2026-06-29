@@ -1,0 +1,41 @@
+name: Check Upstream Updates
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # ежедневно в 6:00 UTC
+  workflow_dispatch:        # можно запустить вручную
+
+jobs:
+  check:
+    name: Check nxhack/openwrt-node-packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Get latest upstream commit (openwrt-24.10)
+        id: upstream
+        run: |
+          SHA=$(curl -s \
+            "https://api.github.com/repos/nxhack/openwrt-node-packages/commits?sha=openwrt-24.10&per_page=1" \
+            | jq -r '.[0].sha')
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Latest upstream commit: $SHA"
+
+      - name: Create cache marker
+        run: mkdir -p .upstream-processed && date > .upstream-processed/marker
+
+      - name: Cache upstream commit SHA
+        id: cache-sha
+        uses: actions/cache@v5
+        with:
+          path: .upstream-processed
+          key: upstream-sha-openwrt-24.10-${{ steps.upstream.outputs.sha }}
+
+      - name: Trigger build
+        if: steps.cache-sha.outputs.cache-hit != 'true'
+        run: |
+          echo "New upstream commit detected: ${{ steps.upstream.outputs.sha }}"
+          echo "Triggering build workflow..."
+          gh workflow run build.yml --ref main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
