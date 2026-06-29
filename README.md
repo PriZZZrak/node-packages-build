@@ -21,7 +21,6 @@ The workflow runs on `ubuntu-latest` and manually downloads the OpenWRT SDK for 
 
 ### Trigger a build
 
-- **On push**: Pushing to `main` or `master` automatically triggers the workflow.
 - **Manually**: Go to your repository's **Actions** tab, select **Build OpenWRT Node Packages**, and click **Run workflow**.
 
 ### Download packages
