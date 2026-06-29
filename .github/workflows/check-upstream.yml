@@ -13,6 +13,8 @@ jobs:
       actions: write
       contents: read
     steps:
+      - uses: actions/checkout@v5
+
       - name: Get timestamp of last successful build
         id: last-build
         run: |
