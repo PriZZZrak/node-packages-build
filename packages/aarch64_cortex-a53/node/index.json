@@ -94,7 +94,7 @@
     "node-noble": "1.9.1-r4",
     "node-npm-check-updates": "22.2.9-r1",
     "node-npm-run-all2": "9.0.2-r1",
-    "node-npm": "22.23.1-r1",
+    "node-npm": "22.23.2-r1",
     "node-onoff": "6.0.3-r2",
     "node-openzwave-shared": "1.7.2-r4",
     "node-pam-diff": "1.2.1-r1",
@@ -147,7 +147,7 @@
     "node-zigbee2mqtt": "2.12.1-r1",
     "node-zwave-js-ui-bundle": "11.22.0-r1",
     "node-zwave-js-ui": "11.22.0-r1",
-    "node": "22.23.1-r1",
+    "node": "22.23.2-r1",
     "ts-node": "10.9.2-r1"
   }
 }
