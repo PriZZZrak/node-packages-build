@@ -350,7 +350,7 @@ Architecture: aarch64_cortex-a53
 Installed-Size: 1136640
 Filename: node-binaryjs_0.2.1-r14_aarch64_cortex-a53.ipk
 Size: 309852
-SHA256sum: 48c0cea00455816788d44661212ff81bf6e2ab8fd227e5316fd295d17ccf4900
+SHA256sum: 65e528a5c5efdce8389a566e32a14108bef1bdff5c87b6b71a3c8541cdb530dc
 Description:  Node binary websocket streaming made easy
 
 Package: node-bleacon
@@ -457,8 +457,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 104550400
 Filename: node-camera.ui_1.1.17-r2_aarch64_cortex-a53.ipk
-Size: 20867258
-SHA256sum: 5f60a8258cc50ec91d6076459d2fa22b18e52049f2c0621919643b758e2f3f94
+Size: 20867360
+SHA256sum: 2cc1379ed9ae0230107858cd2792692354d41c8ad269bfd5847a9050729238b1
 Description:  *** "camara.ui" has not been maintained. Please use it at your own risk. ***
  NVR like user interface for RTSP capable cameras.
 
@@ -834,8 +834,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 8673280
 Filename: node-fuse-bindings_2.12.4-r7_aarch64_cortex-a53.ipk
-Size: 1913213
-SHA256sum: 76de4f88938297bb3a9ca6fc680032184e524f9b957e6696dbe7c9c6aefaa520
+Size: 1913200
+SHA256sum: 1b93d7b92bd636d2b4c49aa33f02e7f7603679b222afc108599af7bff04b8ad5
 Description:  Fully maintained fuse bindings for Node that aims to cover the entire FUSE api
 
 Package: node-gulp
@@ -959,8 +959,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 15390720
 Filename: node-homebridge-camera-ffmpeg_4.1.0-r1_aarch64_cortex-a53.ipk
-Size: 2183570
-SHA256sum: b1eb7731d1af41fe914aca98322336fff89657d3d5986ec455eaabd876637a3f
+Size: 2183669
+SHA256sum: 884115e1f95984314cb1eeeaa3399523625049900ab7d8cf3a0588e238b922f0
 Description:  Homebridge Plugin Providing FFmpeg-based Camera Support
 
 Package: node-homebridge-camera-ui
@@ -1130,8 +1130,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 4116480
 Filename: node-homebridge-shelly-ds9_1.5.8-r1_aarch64_cortex-a53.ipk
-Size: 673229
-SHA256sum: 81357d4d8909360b8c154f91eb130fd4102abb0194c1c3e60c7937fde9bf68eb
+Size: 672463
+SHA256sum: 42dc4ec3cced94abd5e0c2929d434ca9eac12e9863d428beb21957146bd4de90
 Description:  Homebridge plugin for Shelly, enabling HomeKit support for the next generation of Shelly devices.
 
 Package: node-homebridge-tuya-platform
@@ -1740,8 +1740,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 113623040
 Filename: node-pty_1.1.0-r1_aarch64_cortex-a53.ipk
-Size: 19902481
-SHA256sum: a09e3136ff96adb31f119bc589e5f480ba8650b1b0a139d2a5371187244b57fd
+Size: 19906022
+SHA256sum: 6b2833c8233f4e0f66321b12378e240ef68dbe614075c4d50061f6f17de70688
 Description:  forkpty(3) bindings for node.js. This allows you to fork processes with pseudoterminal file descriptors. It returns a terminal object which allows reads and writes.
 
 Package: node-raw-socket
@@ -1813,8 +1813,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 16363520
 Filename: node-red-contrib-modbus_5.60.2-r1_aarch64_cortex-a53.ipk
-Size: 5156896
-SHA256sum: 0b4fdd3dd085a928e8061a46f9212ed43b76475c9a332b6f5e0d74cd601391d2
+Size: 5156811
+SHA256sum: 27962eff01875f53673fb4e8c9d0d2119b6258eac71c675fd93eb544c1c263d2
 Description:  The all in one Modbus TCP and Serial contribution package for Node-RED. Based on modbus-serial with TCP, C701, Telnet, Serial, RTU buffered, and ASCII.
 
 Package: node-red-dashboard
@@ -2190,8 +2190,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 10721280
 Filename: node-sqlite3_6.0.1-r1_aarch64_cortex-a53.ipk
-Size: 2696543
-SHA256sum: b2669575b1a85e95cd8a63f9188b5e8ea88c15ff0c08e444a6c0da54624ffa53
+Size: 2696575
+SHA256sum: 320975e9ab012784c7d4646bb8b45147fcebe37b40ded62f1aa4ef53a7f99316
 Description:  Asynchronous, non-blocking SQLite3 bindings for Node.js
 
 Package: node-static
