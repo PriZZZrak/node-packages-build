@@ -293,10 +293,10 @@ SourceDateEpoch: 1758252616
 URL: https://www.npmjs.org/package/azure-iothub
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 52817920
+Installed-Size: 54517760
 Filename: node-azure-iothub_1.16.6-r1_aarch64_cortex-a53.ipk
-Size: 7776510
-SHA256sum: 4ecd10c56f8010f5c6cc4b1d6173dd304b95ee0031ac9275d0fff5c0d65882a7
+Size: 7973841
+SHA256sum: 0a25150744fb9433515220f26959e063aca966b57ccd67d49f298f0e59126a08
 Description:  The Azure IoT Service SDK for Node.js helps you build applications that interact with your devices and manage their identities in your IoT hub
 
 Package: node-bcrypt
@@ -349,8 +349,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 1136640
 Filename: node-binaryjs_0.2.1-r14_aarch64_cortex-a53.ipk
-Size: 309852
-SHA256sum: 65e528a5c5efdce8389a566e32a14108bef1bdff5c87b6b71a3c8541cdb530dc
+Size: 309855
+SHA256sum: 83351afdb58f5c576c53764299c81237f57459a1982004112d84749fd9b58378
 Description:  Node binary websocket streaming made easy
 
 Package: node-bleacon
@@ -455,10 +455,10 @@ SourceDateEpoch: 1787280633
 URL: https://www.npmjs.com/package/camera.ui
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 104550400
+Installed-Size: 104570880
 Filename: node-camera.ui_1.1.17-r2_aarch64_cortex-a53.ipk
-Size: 20867360
-SHA256sum: 2cc1379ed9ae0230107858cd2792692354d41c8ad269bfd5847a9050729238b1
+Size: 20867352
+SHA256sum: 5e0709944e083c5169b98709cbeb8911294394dce99bf520c44415633308f789
 Description:  *** "camara.ui" has not been maintained. Please use it at your own risk. ***
  NVR like user interface for RTSP capable cameras.
 
@@ -834,8 +834,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 8673280
 Filename: node-fuse-bindings_2.12.4-r7_aarch64_cortex-a53.ipk
-Size: 1913200
-SHA256sum: 1b93d7b92bd636d2b4c49aa33f02e7f7603679b222afc108599af7bff04b8ad5
+Size: 1913196
+SHA256sum: 8fae6a94c2e309e4f5f2381a6f47f9426a28860db05991d59090022f749edda0
 Description:  Fully maintained fuse bindings for Node that aims to cover the entire FUSE api
 
 Package: node-gulp
@@ -875,21 +875,21 @@ SHA256sum: 4b19da2277e31f2a0613315570d2b2448cb3d5cd0a244ce320da6200f707645f
 Description:  Build tool and bindings loader for node-gyp that supports prebuilds
 
 Package: node-gyp
-Version: 13.0.1-r1
+Version: 13.0.2-r1
 Depends: libc, node127
 Source: feeds/node/node-gyp
 SourceName: node-gyp
 License: MIT
 LicenseFiles: LICENSE
 Section: lang
-SourceDateEpoch: 1784184230
+SourceDateEpoch: 1789969661
 URL: https://www.npmjs.org/package/node-gyp
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 7997440
-Filename: node-gyp_13.0.1-r1_aarch64_cortex-a53.ipk
-Size: 1742209
-SHA256sum: 97d7befae97d7145b336faeb06fe434abfd9078e9f53fb6349a074c03118cf4b
+Installed-Size: 8028160
+Filename: node-gyp_13.0.2-r1_aarch64_cortex-a53.ipk
+Size: 1748532
+SHA256sum: 59276f88af855e93c4d71a1aab3442ae119068f9414b69fa21f7e2e3418db235
 Description:  node-gyp is a cross-platform command-line tool written in Node.js for compiling native addon modules for Node.js. It contains a vendored copy of the gyp-next project that was previously used by the Chromium team, extended to support the development of Node.js native addons.
 
 Package: node-hap-nodejs
@@ -994,28 +994,28 @@ SourceDateEpoch: 1770255076
 URL: https://www.npmjs.com/package/homebridge-cmd4
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 235038720
+Installed-Size: 235724800
 Filename: node-homebridge-cmd4_8.0.4-r1_aarch64_cortex-a53.ipk
-Size: 21344396
-SHA256sum: 5ceff1b79d61f43dbcacf260c628d76e454b3d983e0c70d2ad8d752d235ef254
+Size: 21380096
+SHA256sum: c6c9f8cfbf390d23d767fd42d6bdccd562950ce9c682b8f9517f3dafb8d018f9
 Description:  Cmd4 is a plugin for Homebridge that lets you see what Homebridge and Homekit are all about, without actually owning a single accessory! For the more advanced user, Cmd4 brings CLI support for all device types (Accessories) and characteristics.
 
 Package: node-homebridge-config-ui-x
-Version: 5.28.0-r1
+Version: 5.29.0-r1
 Depends: libc, node127, node-homebridge, sudo, node-homebridge-node-pty-prebuilt-multiarch, node-bufferutil, node-utf-8-validate
 Source: feeds/node/node-homebridge-config-ui-x
 SourceName: node-homebridge-config-ui-x
 License: MIT
 LicenseFiles: LICENSE
 Section: lang
-SourceDateEpoch: 1787279996
+SourceDateEpoch: 1789970627
 URL: https://www.npmjs.org/package/homebridge-config-ui-x
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 51486720
-Filename: node-homebridge-config-ui-x_5.28.0-r1_aarch64_cortex-a53.ipk
-Size: 10835030
-SHA256sum: 6df673ab9f570302adc53030146d017856d903cf8f78be2c6fe122ad9b3f873a
+Installed-Size: 57569280
+Filename: node-homebridge-config-ui-x_5.29.0-r1_aarch64_cortex-a53.ipk
+Size: 11102857
+SHA256sum: 26dcc576cc6ebae27e1c0b31ebc6a303181711c9cc9efda9edbd3205723b8ac3
 Description:  Homebridge Config UI X is a web based management tool for Homebridge that allows you to manage all aspects of your Homebridge setup.
  
  Run as root:
@@ -1038,46 +1038,46 @@ SourceDateEpoch: 1784188141
 URL: https://www.npmjs.com/package/@homebridge-plugins/homebridge-eufy-security
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 55142400
+Installed-Size: 56094720
 Filename: node-homebridge-eufy-security_4.7.2-r1_aarch64_cortex-a53.ipk
-Size: 18567319
-SHA256sum: 0748704f60f417479491e90ce16b3484efe8cb6a28d83be2867c4c426210426a
+Size: 18566727
+SHA256sum: 89459b2c652b17243bfde9c17c933a635ae960ba32084ab2f9df7889af2ec2a5
 Description:  Homebridge plugin to control certain Eufy Security devices.
 
 Package: node-homebridge-hue
-Version: 0.15.9-r1
+Version: 0.15.10-r1
 Depends: libc, node127, node-homebridge
 Source: feeds/node/node-homebridge-hue
 SourceName: node-homebridge-hue
 License: Apache-2.0
 LicenseFiles: LICENSE
 Section: lang
-SourceDateEpoch: 1784184444
+SourceDateEpoch: 1789970452
 URL: https://www.npmjs.com/package/homebridge-hue
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 237803520
-Filename: node-homebridge-hue_0.15.9-r1_aarch64_cortex-a53.ipk
-Size: 22326000
-SHA256sum: 7f86ef0ff9b77b63fc60d9f1d50ba9b234d37669313035f34a0d40f1472fbc0a
+Installed-Size: 238489600
+Filename: node-homebridge-hue_0.15.10-r1_aarch64_cortex-a53.ipk
+Size: 22386812
+SHA256sum: 693da41387f7023dd1efc497462670fd649af48db9bcace7f0ef0abb8eee79c6
 Description:  This Homebridge plugin exposes to Apple's HomeKit ZigBee devices (lights, plugs, sensors, switches, ...) connected to a Hue bridge by Signify.
 
 Package: node-homebridge-miot
-Version: 1.9.0-r1
+Version: 1.9.1-r1
 Depends: libc, node127, node-homebridge
 Source: feeds/node/node-homebridge-miot
 SourceName: node-homebridge-miot
 License: MIT
 LicenseFiles: LICENSE
 Section: lang
-SourceDateEpoch: 1787279814
+SourceDateEpoch: 1789970396
 URL: https://www.npmjs.com/package/homebridge-miot
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 5222400
-Filename: node-homebridge-miot_1.9.0-r1_aarch64_cortex-a53.ipk
-Size: 754171
-SHA256sum: fe81d9196ffc23e949c098e2d9b39adf022bb475010076c2905c78f79da62d25
+Filename: node-homebridge-miot_1.9.1-r1_aarch64_cortex-a53.ipk
+Size: 755711
+SHA256sum: a14949d3f53fa9f81e4a4252998736ec5eb5dc521033360507268ebb33dd9e86
 Description:  Homebridge plugin for devices supporting the miot protocol
 
 Package: node-homebridge-mqttthing
@@ -1092,10 +1092,10 @@ SourceDateEpoch: 1767574428
 URL: https://www.npmjs.com/package/homebridge-mqttthing
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 237864960
+Installed-Size: 238551040
 Filename: node-homebridge-mqttthing_1.1.49-r1_aarch64_cortex-a53.ipk
-Size: 21851975
-SHA256sum: bdc59167dce126691b20f0e962ab504927b21d2b23fecfe07456b76bdfe46f6a
+Size: 21890201
+SHA256sum: 6e02bd3e63d0e585b8e0dba83409bb85c48ac73925b0db3168a4c3fa410ac878
 Description:  Homebridge MQTT-Thing is a plugin for Homebridge allowing the integration of many different accessory types using MQTT.
 
 Package: node-homebridge-node-pty-prebuilt-multiarch
@@ -1206,21 +1206,21 @@ SHA256sum: 216234baae5ae33236d697df0be0fdd8c7038de1d1bd76279b768821a6fb8c6d
 Description:  Control and monitor your Xiaomi Mi Air Purifier purifier with HomeKit.
 
 Package: node-homebridge-xiaomi-roborock-vacuum
-Version: 0.35.0-r1
+Version: 0.36.0-r1
 Depends: libc, node127, node-homebridge
 Source: feeds/node/node-homebridge-xiaomi-roborock-vacuum
 SourceName: node-homebridge-xiaomi-roborock-vacuum
 License: MIT
 LicenseFiles: LICENSE
 Section: lang
-SourceDateEpoch: 1770254920
+SourceDateEpoch: 1789970340
 URL: https://www.npmjs.com/package/homebridge-xiaomi-roborock-vacuum
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 16619520
-Filename: node-homebridge-xiaomi-roborock-vacuum_0.35.0-r1_aarch64_cortex-a53.ipk
-Size: 2300449
-SHA256sum: 26fef04a3068393491087c74771f87927293d6fc58721d7df420f520343f5529
+Filename: node-homebridge-xiaomi-roborock-vacuum_0.36.0-r1_aarch64_cortex-a53.ipk
+Size: 2301912
+SHA256sum: 0129137ed746822f436426a584ee9534ba823b4c929506ee40047218a445707e
 Description:  Xiaomi Vacuum Cleaner - 1st (Mi Robot), 2nd (Roborock S50 + S55), 3rd Generation (Roborock S6) and S5 Max - plugin for Homebridge.
 
 Package: node-homekit2mqtt
@@ -1260,21 +1260,21 @@ SHA256sum: 2ce935ab7168c56abcf1c91f3a88c94fb374df01018bc5befb102a12ffb2cbe9
 Description:  I2C serial bus access with Node.js on Linux boards like the Raspberry Pi Zero, 1, 2, or 3, BeagleBone, BeagleBone Black, or Intel Edison. All methods have asynchronous and synchronous forms
 
 Package: node-javascript-obfuscator
-Version: 5.5.1-r1
+Version: 5.8.0-r1
 Depends: libc, node127
 Source: feeds/node/node-javascript-obfuscator
 SourceName: node-javascript-obfuscator
 License: BSD-2-Clause
 LicenseFiles: LICENSE.BSD
 Section: lang
-SourceDateEpoch: 1787359174
+SourceDateEpoch: 1789970273
 URL: https://www.npmjs.org/package/javascript-obfuscator
 Maintainer: Zbynek Kocur <zbynek.kocur@fel.cvut.cz>
 Architecture: aarch64_cortex-a53
-Installed-Size: 53606400
-Filename: node-javascript-obfuscator_5.5.1-r1_aarch64_cortex-a53.ipk
-Size: 9174397
-SHA256sum: 2d03d5d51c68e6c53eb810b6c969a2724061cb001f7f482ae3fe2598a4575631
+Installed-Size: 53657600
+Filename: node-javascript-obfuscator_5.8.0-r1_aarch64_cortex-a53.ipk
+Size: 9194288
+SHA256sum: eb603d12e123894dc004ec7e57cf1a0782d63b907f3a8bd6b8541941f328f606
 Description:  JavaScript obfuscator is a powerful free obfuscator for JavaScript with a wide number of features which provides protection for your source code.
 
 Package: node-johnny-five
@@ -1402,21 +1402,21 @@ SHA256sum: 6cb6d7437ab4ae1489fbb17939da84c5b71f5870e5640a5077240d051d156a72
 Description:  MegaHash is a super-fast C++ hash table with a Node.js wrapper, capable of storing over 1 billion keys, has read/write speeds above 500,000 keys per second (depending on CPU speed and total keys in hash), and relatively low memory overhead. This module is designed primarily as a replacement for ES6 Maps, which seem to crash Node.js after about 15 million keys.
 
 Package: node-mocha
-Version: 11.8.0-r1
+Version: 12.0.2-r1
 Depends: libc, node127
 Source: feeds/node/node-mocha
 SourceName: node-mocha
 License: MIT
 LicenseFiles: LICENSE
 Section: lang
-SourceDateEpoch: 1787279755
+SourceDateEpoch: 1789970178
 URL: https://www.npmjs.org/package/mocha
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 9359360
-Filename: node-mocha_11.8.0-r1_aarch64_cortex-a53.ipk
-Size: 2032821
-SHA256sum: 8d3b4552f17bce3a2b0d196d110a44d1c4ba27d402293a5aefb0fc555eb348c8
+Installed-Size: 11151360
+Filename: node-mocha_12.0.2-r1_aarch64_cortex-a53.ipk
+Size: 2510098
+SHA256sum: 4de747292b2e050f1e85ba3f0c7b539c4a5dcacaa069f65111bc35dc99517d53
 Description:  Mocha is a simple, flexible, fun JavaScript test framework for node.js and the browser
 
 Package: node-modbus-serial
@@ -1457,21 +1457,21 @@ SHA256sum: 14152187c594ae775d05733b6510613eebc682e8b2a3a37006e980ee41e51053
 Description:  Remove unwanted files and directories from your node_modules folder
 
 Package: node-mqtt
-Version: 5.15.2-r1
+Version: 5.16.0-r1
 Depends: libc, node127, node-ws
 Source: feeds/node/node-mqtt
 SourceName: node-mqtt
 License: MIT
 LicenseFiles: LICENSE.md
 Section: lang
-SourceDateEpoch: 1784184325
+SourceDateEpoch: 1789970099
 URL: https://www.npmjs.org/package/mqtt
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 11028480
-Filename: node-mqtt_5.15.2-r1_aarch64_cortex-a53.ipk
-Size: 1973610
-SHA256sum: 720f202297cbd0e53b1400e8d99e4235cfb3f32493be559e465bad3274d7a44b
+Installed-Size: 9553920
+Filename: node-mqtt_5.16.0-r1_aarch64_cortex-a53.ipk
+Size: 1733693
+SHA256sum: a8a4fb310fd732f3f5d4b324ea17a9cfc34df763811e667bf497ed1216a2c532
 Description:  MQTT.js is a client library for the MQTT protocol, written in JavaScript for node.js and the browser
 
 Package: node-nconf
@@ -1547,21 +1547,21 @@ SHA256sum: 6b6873563cc717c7c56308d32f93fd90b91038105ce88c9d5fc19151491e3184
 Description:  A node.js BLE (Bluetooth low energy) central library.
 
 Package: node-npm-check-updates
-Version: 23.0.2-r1
+Version: 23.1.0-r1
 Depends: libc, node127, git
 Source: feeds/node/node-npm-check-updates
 SourceName: node-npm-check-updates
 License: Apache-2.0
 LicenseFiles: LICENSE
 Section: lang
-SourceDateEpoch: 1787279547
+SourceDateEpoch: 1789969434
 URL: https://www.npmjs.com/package/npm-check-updates/
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>, Patrik Laszlo <alabard@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 5560320
-Filename: node-npm-check-updates_23.0.2-r1_aarch64_cortex-a53.ipk
-Size: 1313819
-SHA256sum: 431f92744b4939b067ffbe81ad8c6cdd17d7dd0953c1fe22b18098df80a7d38b
+Installed-Size: 5621760
+Filename: node-npm-check-updates_23.1.0-r1_aarch64_cortex-a53.ipk
+Size: 1331878
+SHA256sum: 380ceb682572e05b1d9a1b4336db49d3c797adaae9bba954605c3ce7be21454e
 Description:  The npm-check-updates program is a command-line tool that allows you to upgrade your package.json or bower.json dependencies to the latest versions, regardless of existing version constraints
 
 Package: node-npm-run-all2
@@ -1691,39 +1691,39 @@ SHA256sum: 37cf456940390eb3ee6032ffd89919f49d1a4046fab9f91c559c31c923d3e912
 Description:  Measure differences between 2 identically sized buffer arrays of gray, rgb, or rgba pixels.
 
 Package: node-pm2
-Version: 7.0.3-r1
+Version: 7.0.4-r1
 Depends: libc, node127
 Source: feeds/node/node-pm2
 SourceName: node-pm2
 License: AGPL-3.0
 LicenseFiles: LICENSE
 Section: lang
-SourceDateEpoch: 1784184066
+SourceDateEpoch: 1789969366
 URL: https://pm2.keymetrics.io/
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 17797120
-Filename: node-pm2_7.0.3-r1_aarch64_cortex-a53.ipk
-Size: 3588105
-SHA256sum: 928c7925e503aca58cc1218894d1ce3bead5aedf851d1d9fe578e571c7a96929
+Filename: node-pm2_7.0.4-r1_aarch64_cortex-a53.ipk
+Size: 3591081
+SHA256sum: 5d7d6c4dac17ffc0db89f9000ce78637cfadfaf9074c2cdb76a5ca2bc2b92638
 Description:  PM2 is a production process manager for Node.js applications with a built-in load balancer. It allows you to keep applications alive forever, to reload them without downtime and to facilitate common system admin tasks
 
 Package: node-pnpm
-Version: 11.22.0-r1
+Version: 11.27.1-r1
 Depends: libc, node127
 Source: feeds/node/node-pnpm
 SourceName: node-pnpm
 License: MIT
 LicenseFiles: LICENSE
 Section: lang
-SourceDateEpoch: 1787279399
+SourceDateEpoch: 1789973531
 URL: https://pnpm.io/
 Maintainer: Tianling Shen <cnsztl@immortalwrt.org>
 Architecture: aarch64_cortex-a53
-Installed-Size: 14110720
-Filename: node-pnpm_11.22.0-r1_aarch64_cortex-a53.ipk
-Size: 3051779
-SHA256sum: c35285264157e367c191b8e0028ed1ff32925e767c0bdcf5f6ec9a7c063fb941
+Installed-Size: 14571520
+Filename: node-pnpm_11.27.1-r1_aarch64_cortex-a53.ipk
+Size: 3154251
+SHA256sum: 9d6b142841a1007fece89ff2a10e7ebc72c78897dcd0a910dae476d3a664b301
 Description:  Fast, disk space efficient package manager
 
 Package: node-pty
@@ -1740,8 +1740,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 113623040
 Filename: node-pty_1.1.0-r1_aarch64_cortex-a53.ipk
-Size: 19906022
-SHA256sum: 6b2833c8233f4e0f66321b12378e240ef68dbe614075c4d50061f6f17de70688
+Size: 19905894
+SHA256sum: 6e59e058a53b81c373af6bbcbee8fc2a27cdb670391e19e0782be48587215c35
 Description:  forkpty(3) bindings for node.js. This allows you to fork processes with pseudoterminal file descriptors. It returns a terminal object which allows reads and writes.
 
 Package: node-raw-socket
@@ -1813,8 +1813,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 16363520
 Filename: node-red-contrib-modbus_5.60.2-r1_aarch64_cortex-a53.ipk
-Size: 5156811
-SHA256sum: 27962eff01875f53673fb4e8c9d0d2119b6258eac71c675fd93eb544c1c263d2
+Size: 5156783
+SHA256sum: a7a2e59854bfac23703009566a2625b93e7491f7679ad77581e33ad9b1fd7a5a
 Description:  The all in one Modbus TCP and Serial contribution package for Node-RED. Based on modbus-serial with TCP, C701, Telnet, Serial, RTU buffered, and ASCII.
 
 Package: node-red-dashboard
@@ -1829,10 +1829,10 @@ SourceDateEpoch: 1756784316
 URL: https://flows.nodered.org/node/node-red-dashboard
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 12943360
+Installed-Size: 12933120
 Filename: node-red-dashboard_3.6.6-r1_aarch64_cortex-a53.ipk
-Size: 3249010
-SHA256sum: bbf30cd04c5ce3d318a8fb7333de06468c67e74fbc2ed95442859d803c308ff2
+Size: 3243212
+SHA256sum: 28b1fb3d4487596ec0e94431249437bbfaebdbb1796d2fecf7bf2f39b4e5e4fa
 Description:  This module provides a set of nodes in Node-RED to quickly create a live data dashboard.a
 
 Package: node-red-node-arduino
@@ -1908,21 +1908,21 @@ SHA256sum: d9d18b63b4e00d8ce9e4881d223a37924635ce7c008fbec712ae4cf941068125
 Description:  A Node-Red node to read and write a local sqlite database.
 
 Package: node-red
-Version: 5.0.4-r1
+Version: 5.0.7-r1
 Depends: libc, node127, node-npm, node-bcrypt, node-bufferutil, node-utf-8-validate
 Source: feeds/node/node-red
 SourceName: node-red
 License: Apache-2.0
 LicenseFiles: LICENSE
 Section: lang
-SourceDateEpoch: 1787279704
+SourceDateEpoch: 1789969536
 URL: https://nodered.org/
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 88893440
-Filename: node-red_5.0.4-r1_aarch64_cortex-a53.ipk
-Size: 19470046
-SHA256sum: 81aaf0822902a3512440211fc5559fe7312b72975c09d9eb720c66bc5c9b416b
+Installed-Size: 88360960
+Filename: node-red_5.0.7-r1_aarch64_cortex-a53.ipk
+Size: 19352011
+SHA256sum: b59561424f3b522198500756f265eef16d31802f887efca00ea4b521e17380c4
 Description:  A visual tool for wiring the Internet of Things
 
 Package: node-rimraf
@@ -2134,10 +2134,10 @@ SourceDateEpoch: 1767574119
 URL: https://www.npmjs.org/package/socket.io
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 5570560
+Installed-Size: 5550080
 Filename: node-socket.io_4.8.3-r1_aarch64_cortex-a53.ipk
-Size: 1077669
-SHA256sum: 26d43b327eaaa3ea7eac07aab4c5ceb3a4639c413e2c2f9b88f4f50ebd070c2f
+Size: 1071838
+SHA256sum: 1243528af358ad0821252c3ee5fb4cb6a1fbbbeb0b79aaf9ae8369be5f3d0e5e
 Description:  Real-time apps made cross-browser & easy with a WebSocket-like API
 
 Package: node-socketio-jwt
@@ -2190,8 +2190,8 @@ Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
 Installed-Size: 10721280
 Filename: node-sqlite3_6.0.1-r1_aarch64_cortex-a53.ipk
-Size: 2696575
-SHA256sum: 320975e9ab012784c7d4646bb8b45147fcebe37b40ded62f1aa4ef53a7f99316
+Size: 2696547
+SHA256sum: b8ba6fb8f3d703ee2fa74cf9778df6a96c0d4acebbf86841b95a9b34e1bac3d6
 Description:  Asynchronous, non-blocking SQLite3 bindings for Node.js
 
 Package: node-static
@@ -2249,39 +2249,39 @@ SHA256sum: ffe830f10e4fb04adbf4e72ac6d1a8369f1fd4b42a52c115e3db8f1984e02413
 Description:  A real and better system sleep() for Node. Works on every platform.
 
 Package: node-terser
-Version: 5.50.0-r1
+Version: 5.51.2-r1
 Depends: libc, node127
 Source: feeds/node/node-terser
 SourceName: node-terser
 License: BSD-2-Clause
 LicenseFiles: LICENSE
 Section: lang
-SourceDateEpoch: 1787279349
+SourceDateEpoch: 1789969221
 URL: https://www.npmjs.org/package/terser
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 4638720
-Filename: node-terser_5.50.0-r1_aarch64_cortex-a53.ipk
-Size: 938239
-SHA256sum: 557ae0c6f4bc77e1a6cee624d548f89f1ffb7f2f04253c4ae4207117e096560c
+Installed-Size: 4648960
+Filename: node-terser_5.51.2-r1_aarch64_cortex-a53.ipk
+Size: 939265
+SHA256sum: 128c639d4cc6d1aa10a9daecf3de205695b9690696b60129cfe026f823e50008
 Description:  JavaScript parser, mangler/compressor and beautifier toolkit for ES6+
 
 Package: node-twilio
-Version: 6.1.0-r1
+Version: 6.1.1-r1
 Depends: libc, node127
 Source: feeds/node/node-twilio
 SourceName: node-twilio
 License: MIT
 LicenseFiles: LICENSE
 Section: lang
-SourceDateEpoch: 1787279296
+SourceDateEpoch: 1789969135
 URL: https://www.npmjs.org/package/twilio
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 23818240
-Filename: node-twilio_6.1.0-r1_aarch64_cortex-a53.ipk
-Size: 2882910
-SHA256sum: 2d784ec8527fe190efe75c2c87c7b5cfd4e0016e0959e358e3b0ef455463939d
+Installed-Size: 23879680
+Filename: node-twilio_6.1.1-r1_aarch64_cortex-a53.ipk
+Size: 2889896
+SHA256sum: 92428071e140cbd2774b5048f32d85c62739c470883ec6c46e6f44df88adedd0
 Description:  A Twilio helper library
 
 Package: node-typescript
@@ -2375,39 +2375,39 @@ SHA256sum: b517070634a2ab8beecf8fcde620459862d7fc9063f187eecda41c3d56740429
 Description:  Check if a buffer contains valid UTF-8 encoded text
 
 Package: node-vonage-client-sdk
-Version: 2.6.1-r1
+Version: 2.7.3-r1
 Depends: libc, node127
 Source: feeds/node/node-vonage-client-sdk
 SourceName: node-vonage-client-sdk
 License: SEE_LICENSE_IN_LICENSE
 LicenseFiles: LICENSE
 Section: lang
-SourceDateEpoch: 1784699197
+SourceDateEpoch: 1789970748
 URL: https://www.npmjs.org/package/@vonage/client-sdk
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 123125760
-Filename: node-vonage-client-sdk_2.6.1-r1_aarch64_cortex-a53.ipk
-Size: 20417956
-SHA256sum: c1a392540503af2e880403c9f3e6873fc54ca1d6c1cb7ec07ab937b5c1e1badf
+Installed-Size: 21360640
+Filename: node-vonage-client-sdk_2.7.3-r1_aarch64_cortex-a53.ipk
+Size: 3224016
+SHA256sum: fea18d0555db67dfe9cf5cada6b179294599db67fdfe278712e0bc08ed32786c
 Description:  The Client SDK is intended to provide a ready solution for developers to build Programmable Conversation applications across multiple Channels including: Messages, Voice, SIP, websockets, and App.
 
 Package: node-vonage-server-sdk
-Version: 3.29.0-r1
+Version: 3.30.1-r1
 Depends: libc, node127
 Source: feeds/node/node-vonage-server-sdk
 SourceName: node-vonage-server-sdk
 License: Apache-2.0
 LicenseFiles: LICENSE.txt
 Section: lang
-SourceDateEpoch: 1787280692
+SourceDateEpoch: 1789970684
 URL: https://www.npmjs.org/package/@vonage/server-sdk
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 13537280
-Filename: node-vonage-server-sdk_3.29.0-r1_aarch64_cortex-a53.ipk
-Size: 1452177
-SHA256sum: 5cc92f77e046bf3fbc6979f66bb5a042b34f59dc7b0cb5a011dab0c5a67ae22f
+Installed-Size: 14336000
+Filename: node-vonage-server-sdk_3.30.1-r1_aarch64_cortex-a53.ipk
+Size: 1509058
+SHA256sum: 5e4430aeeddbe362f4b6fdb896923dc473f3116d40d2fe5f06b7695491dd1b0e
 Description:  This is the Node.JS Server SDK for Vonage APIs. To use it you will need a Vonage account.
 
 Package: node-websocket
@@ -2483,41 +2483,59 @@ SHA256sum: 96701a11179e6ef02a2cffee9d3cea23128db3ec73a5c2b68c495d11a7a2b395
 Description:  Next-generation ZeroMQ bindings for Node.js
 
 Package: node-zigbee2mqtt
-Version: 2.13.0-r1
+Version: 2.14.1-r1
 Depends: libc, node127, node-bufferutil, node-utf-8-validate
 Source: feeds/node/node-zigbee2mqtt
 SourceName: node-zigbee2mqtt
 License: GPL-3.0
 LicenseFiles: LICENSE
 Section: lang
-SourceDateEpoch: 1787278968
+SourceDateEpoch: 1789969060
 URL: https://github.com/Koenkk/zigbee2mqtt
 Maintainer: Hirokazu MORIKAWA <morikw2@gmail.com>
 Architecture: aarch64_cortex-a53
-Installed-Size: 48537600
-Filename: node-zigbee2mqtt_2.13.0-r1_aarch64_cortex-a53.ipk
-Size: 12093327
-SHA256sum: d631fef4251e0cf1f511f2c957799fe5b765df5ca734de82ad3bc684c7d83ea2
+Installed-Size: 48732160
+Filename: node-zigbee2mqtt_2.14.1-r1_aarch64_cortex-a53.ipk
+Size: 12112403
+SHA256sum: ad6cabd42a5572466de5ccfe7c0086b7fa2e623f1ae164ed1ba04e7f851e96fa
 Description:  Allows you to use your Zigbee devices without the vendor's bridge or gateway. It bridges events and allows you to control your Zigbee devices via MQTT. In this way you can integrate your Zigbee devices with whatever smart home infrastructure you are using.
 
 Package: node-zwave-js-ui-bundle
-Version: 11.22.3-r1
+Version: 11.24.1-r1
 Depends: libc, node127, node-bufferutil, node-utf-8-validate, node-serialport
 Source: feeds/node/node-zwave-js-ui-bundle
 SourceName: node-zwave-js-ui-bundle
 License: MIT
 LicenseFiles: LICENSE
 Section: lang
-SourceDateEpoch: 1787279028
+SourceDateEpoch: 1789968919
 URL: https://zwave-js.github.io/zwave-js-ui/
 Maintainer: David Woodhouse <dwmw2@infradead.org>
 Architecture: aarch64_cortex-a53
-Installed-Size: 26306560
-Filename: node-zwave-js-ui-bundle_11.22.3-r1_aarch64_cortex-a53.ipk
-Size: 4908036
-SHA256sum: 1c717d6983bc533be6db54bf079c5ecf7028e3ae8b82983ef83aa429c62cc7d8
+Installed-Size: 26419200
+Filename: node-zwave-js-ui-bundle_11.24.1-r1_aarch64_cortex-a53.ipk
+Size: 4927119
+SHA256sum: e121728edabd00ec4bf4a2764e3ce21ebea3bf5a59e5e152d968b7aac3f908b4
 Description:  Z-Wave control panel UI and MQTT gateway.
  Bundled as a web app to compress file size.
+
+Package: node-zwave-js-ui
+Version: 11.24.1-r2
+Depends: libc, node127, node-bufferutil, node-utf-8-validate
+Source: feeds/node/node-zwave-js-ui
+SourceName: node-zwave-js-ui
+License: MIT
+LicenseFiles: LICENSE
+Section: lang
+SourceDateEpoch: 1790059881
+URL: https://www.npmjs.org/package/zwave-js-ui
+Maintainer: David Woodhouse <dwmw2@infradead.org>
+Architecture: aarch64_cortex-a53
+Installed-Size: 70635520
+Filename: node-zwave-js-ui_11.24.1-r2_aarch64_cortex-a53.ipk
+Size: 12253018
+SHA256sum: e568b528f8fb34a488a21bb0aeb14b7eed9f7fdb86babbed3201c9984cfb15e0
+Description:  Z-Wave control panel UI and MQTT gateway
 
 Package: node127
 Version: 22.23.2-r1
