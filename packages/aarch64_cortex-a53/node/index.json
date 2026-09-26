@@ -142,7 +142,6 @@
     "node-zeromq": "6.0.8-r2",
     "node-zigbee2mqtt": "2.14.1-r1",
     "node-zwave-js-ui-bundle": "11.24.1-r1",
-    "node-zwave-js-ui": "11.24.1-r2",
     "node": "22.23.2-r1",
     "ts-node": "10.9.2-r1"
   }
