@@ -231,7 +231,9 @@ jobs:
           fi
           echo "цели: ${targets[*]}"
           rc=0
-          make "${targets[@]}" -j"$(nproc)" -k V=0 CONFIG_AUTOREMOVE=y 2>&1 | tee build-node.log || rc=$?
+          # РОВНО ОДИН вызов make: повторные вызовы в той же песочнице заставляют OpenWrt
+          # перегенерировать .config и запускать clean-build → полная пересборка node/openssl.
+          make "${targets[@]}" -j"$(nproc)" -k V=0 2>&1 | tee build-node.log || rc=$?
           if [ "$rc" -ne 0 ]; then
             echo "::warning::сборка рантайма сообщила об ошибках (rc=$rc) — смотрим ipk ниже"
             echo "node-runtime" >> failures.txt
@@ -385,31 +387,23 @@ jobs:
           echo "шард ${SHARD}/${SHARDS}: ${#pkgs[@]} пакетов (всего каталогов: $idx)"
 
           : > failures.txt
-          BATCH=10
-          total=${#pkgs[@]}
-          i=0
-          while (( i < total )); do
-            batch=("${pkgs[@]:i:BATCH}")
-            targets=()
-            for p in "${batch[@]}"; do targets+=("package/feeds/node/$p/compile"); done
-            echo "::group::batch $((i + 1))..$((i + ${#batch[@]}))"
-            if make "${targets[@]}" -j"$(nproc)" -k V=0 CONFIG_AUTOREMOVE=y 2>&1 | tee -a build.log; then
-              echo "::endgroup::"
-            else
-              # батч упал — добиваем по одному, чтобы один битый пакет не съел остальные
-              echo "::endgroup::"
-              for p in "${batch[@]}"; do
-                echo "::group::retry $p"
-                make "package/feeds/node/$p/compile" -j"$(nproc)" -k V=0 CONFIG_AUTOREMOVE=y \
-                  2>&1 | tee -a "log-${p}.txt" || echo "$p" >> failures.txt
-                echo "::endgroup::"
-              done
-            fi
-            i=$((i + BATCH))
-            df -h / | tail -1
-          done
+          targets=()
+          for p in "${pkgs[@]}"; do targets+=("package/feeds/node/$p/compile"); done
+          echo "целей: ${#targets[@]}"
 
-          echo "--- упало $(wc -l < failures.txt) ---"
+          if [ ${#targets[@]} -gt 0 ]; then
+            rc=0
+            # РОВНО ОДИН вызов make на шард. Раньше было по батчам с ретраями, и каждый
+            # следующий вызов make перегенерировал .config → OpenWrt запускал clean-build
+            # и заново собирал node/openssl (отсюда 2+ часа в одном шарде).
+            # -k продолжает сборку после ошибок, список упавших достаём из лога.
+            make "${targets[@]}" -j"$(nproc)" -k V=0 2>&1 | tee build.log || rc=$?
+            echo "make rc=$rc"
+            grep -hoE 'ERROR: [^ ]+ failed to build|ERROR: package/[^ ]+ failed' build.log 2>/dev/null \
+              | sed -E 's#^ERROR: (package/feeds/node/)?##; s# failed.*##' | sort -u > failures.txt || true
+          fi
+
+          echo "--- упало: $(wc -l < failures.txt) ---"
           cat failures.txt
 
       - name: Collect ipk
@@ -442,7 +436,6 @@ jobs:
           name: logs-shard-${{ matrix.shard }}
           path: |
             ${{ env.SDK_DIR }}/build.log
-            ${{ env.SDK_DIR }}/log-*.txt
             ${{ env.SDK_DIR }}/failures.txt
             ${{ env.SDK_DIR }}/shard-list.txt
             ${{ env.SDK_DIR }}/logs/
