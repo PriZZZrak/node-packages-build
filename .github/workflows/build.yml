@@ -70,6 +70,8 @@ jobs:
       shards: ${{ steps.p.outputs.shards }}
       shard_count: ${{ steps.p.outputs.shard_count }}
       feeds_branch: ${{ steps.p.outputs.feeds_branch }}
+      feeds_sha: ${{ steps.p.outputs.feeds_sha }}
+      node_key: ${{ steps.p.outputs.node_key }}
     steps:
       - name: Resolve SDK tarball and shard plan
         id: p
@@ -96,12 +98,18 @@ jobs:
           # Ветка node-фида под релиз: 24.10.8 -> openwrt-24.10 (у nxhack своя ветка на каждый релиз).
           # master тянет самый новый Node (26.x) и пакеты, которым нужен более свежий OpenWRT.
           fb="openwrt-${V%.*}"
-          if git ls-remote --exit-code --heads "${NODE_FEED_URL}" "$fb" >/dev/null 2>&1; then
-            echo "ветка node-фида: $fb"
-          else
+          ref="$(git ls-remote --heads "${NODE_FEED_URL}" "refs/heads/${fb}" 2>/dev/null | cut -f1)"
+          if [ -z "$ref" ]; then
             echo "::warning::ветки $fb в node-фиде нет — беру master"
             fb="master"
+            ref="$(git ls-remote --heads "${NODE_FEED_URL}" refs/heads/master 2>/dev/null | cut -f1)"
           fi
+          feeds_sha="${ref:-unknown}"
+          echo "ветка node-фида: $fb (${feeds_sha:0:12})"
+
+          # Ключ кэша собранного Node. Меняется при смене SDK, таргета или коммита фида,
+          # поэтому при обновлении апстрима Node пересоберётся один раз и снова закэшируется.
+          node_key="node-state-${slug}-${feeds_sha:0:16}"
 
           shards_json="$(python3 -c "import json,os;print(json.dumps(list(range(1,int(os.environ['N'])+1))))")"
 
@@ -116,6 +124,8 @@ jobs:
             echo "shard_count=$N"
             echo "shards=$shards_json"
             echo "feeds_branch=$fb"
+            echo "feeds_sha=$feeds_sha"
+            echo "node_key=$node_key"
           } >> "$GITHUB_OUTPUT"
 
           {
@@ -127,7 +137,8 @@ jobs:
             echo "| Target | \`$T\` |"
             echo "| Arch | \`$A\` |"
             echo "| SDK | \`$f\` |"
-            echo "| Ветка node-фида | \`$fb\` |"
+            echo "| Ветка node-фида | \`$fb\` @ \`${feeds_sha:0:12}\` |"
+            echo "| Ключ кэша Node | \`$node_key\` |"
             echo "| Шардов для пакетов | \`$N\` |"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -172,6 +183,19 @@ jobs:
           # ключ статический: источники не перезаписываются, -v1 бампать при желании обновить
           key: dl-${{ needs.plan.outputs.cache_slug }}-v1
 
+      - name: Restore cached node build state
+        id: node-cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ runner.temp }}/node-state.tar.zst
+          # Точный ключ = SDK + таргет + коммит node-фида.
+          # restore-keys даёт мягкий фолбэк: если апстрим сдвинулся, берём предыдущее
+          # состояние, и make пересобирает Node только если реально изменились его
+          # источник/Makefile (штампы .prepared завязаны на md5 каталога пакета).
+          key: ${{ needs.plan.outputs.node_key }}
+          restore-keys: |
+            node-state-${{ needs.plan.outputs.cache_slug }}-
+
       - name: Fetch and extract SDK
         env:
           SDK_URL: ${{ needs.plan.outputs.sdk_url }}
@@ -214,6 +238,20 @@ jobs:
           grep -q '^CONFIG_NODEJS_22=y' .config \
             || echo "::warning::CONFIG_NODEJS_22 не применился, в конфиге: $(grep -o '^CONFIG_NODEJS_[0-9]*' .config | sort -u | tr '\n' ' ')"
           df -h /
+
+      - name: Unpack cached node build state
+        id: node-state
+        run: |
+          set -euo pipefail
+          tgz="$RUNNER_TEMP/node-state.tar.zst"
+          if [ -f "$tgz" ]; then
+            tar --zstd -xf "$tgz" -C "$SDK_DIR" --no-same-owner
+            echo "hit=true" >> "$GITHUB_OUTPUT"
+            echo "состояние Node восстановлено из кэша — сборка V8 не нужна"
+          else
+            echo "hit=false" >> "$GITHUB_OUTPUT"
+            echo "кэша нет — Node будет собран с нуля"
+          fi
 
       - name: Build node runtime
         working-directory: ${{ env.SDK_DIR }}
@@ -265,6 +303,7 @@ jobs:
           if-no-files-found: error
 
       - name: Pack node build state
+        if: steps.node-state.outputs.hit != 'true'
         working-directory: ${{ env.SDK_DIR }}
         continue-on-error: true
         run: |
@@ -272,7 +311,9 @@ jobs:
           shopt -s nullglob
           # Шардам нужны не только файлы, но и штампы сборки (.installed / .built),
           # иначе make пересоберёт node с нуля. Штампы лежат в staging_dir и в build_dir.
-          files=(staging_dir)
+          # bin/packages нужен на случай восстановления из кэша: make готовый Node не
+          # перепаковывает, поэтому ipk тоже кладём в состояние.
+          files=(staging_dir bin/packages)
           for d in build_dir/target-*/node-*; do files+=("$d"); done
           echo "в состояние входит:"; printf '  %s\n' "${files[@]}"
           tar -I 'zstd -3 -T0' -cf "$RUNNER_TEMP/node-state.tar.zst" "${files[@]}"
@@ -398,7 +439,8 @@ jobs:
             echo "::warning::состояние Node недоступно — шард соберёт Node сам"
             exit 0
           fi
-          tar --zstd -xf "$tgz" -C "$SDK_DIR" --no-same-owner
+          tar --zstd -xf "$tgz" -C "$SDK_DIR" --no-same-owner staging_dir build_dir \
+            || echo "::warning::не всё состояние распаковалось"
           ls -lh "$SDK_DIR/staging_dir/host/bin/node" 2>/dev/null \
             || echo "::warning::host-node в состоянии не найден"
           ls -d "$SDK_DIR"/build_dir/target-*/node-* 2>/dev/null || true
