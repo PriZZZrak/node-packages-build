@@ -39,7 +39,7 @@ on:
           - "2"
           - "3"
           - "4"
-        default: "2"
+        default: "3"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -264,6 +264,30 @@ jobs:
           compression-level: 0
           if-no-files-found: error
 
+      - name: Pack node build state
+        working-directory: ${{ env.SDK_DIR }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          # Шардам нужны не только файлы, но и штампы сборки (.installed / .built),
+          # иначе make пересоберёт node с нуля. Штампы лежат в staging_dir и в build_dir.
+          files=(staging_dir)
+          for d in build_dir/target-*/node-*; do files+=("$d"); done
+          echo "в состояние входит:"; printf '  %s\n' "${files[@]}"
+          tar -I 'zstd -3 -T0' -cf "$RUNNER_TEMP/node-state.tar.zst" "${files[@]}"
+          ls -lh "$RUNNER_TEMP/node-state.tar.zst"
+
+      - name: Upload node build state
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: node-state
+          path: ${{ runner.temp }}/node-state.tar.zst
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: warn
+
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v7
@@ -277,9 +301,11 @@ jobs:
 
   # -------------------------------------------------------- build-modules
   # «Остальные» пакеты фида, разложенные по шардам (round-robin по именам каталогов).
+  # Ждут build-node и берут его готовое состояние: собирать Node в каждом шарде
+  # бессмысленно — у 140 из 150 пакетов фида PKG_BUILD_DEPENDS:=node/host.
   build-modules:
     name: shard ${{ matrix.shard }}/${{ needs.plan.outputs.shard_count }}
-    needs: plan
+    needs: [plan, build-node]
     runs-on: ubuntu-24.04
     timeout-minutes: 300
     strategy:
@@ -357,6 +383,26 @@ jobs:
           make defconfig
           df -h /
 
+      - name: Download node build state
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: node-state
+          path: ${{ runner.temp }}/node-state
+
+      - name: Unpack node build state
+        run: |
+          set -euo pipefail
+          tgz="$RUNNER_TEMP/node-state/node-state.tar.zst"
+          if [ ! -f "$tgz" ]; then
+            echo "::warning::состояние Node недоступно — шард соберёт Node сам"
+            exit 0
+          fi
+          tar --zstd -xf "$tgz" -C "$SDK_DIR" --no-same-owner
+          ls -lh "$SDK_DIR/staging_dir/host/bin/node" 2>/dev/null \
+            || echo "::warning::host-node в состоянии не найден"
+          ls -d "$SDK_DIR"/build_dir/target-*/node-* 2>/dev/null || true
+
       - name: Build shard packages
         working-directory: ${{ env.SDK_DIR }}
         env:
@@ -399,6 +445,11 @@ jobs:
             # -k продолжает сборку после ошибок, список упавших достаём из лога.
             make "${targets[@]}" -j"$(nproc)" -k V=0 2>&1 | tee build.log || rc=$?
             echo "make rc=$rc"
+            if grep -qE '\-C feeds/node/node(-host)? ' build.log; then
+              echo "::warning::шард пересобирал Node сам — состояние из build-node не подошло"
+            else
+              echo "Node не пересобирался: готовое состояние принято"
+            fi
             grep -hoE 'ERROR: [^ ]+ failed to build|ERROR: package/[^ ]+ failed' build.log 2>/dev/null \
               | sed -E 's#^ERROR: (package/feeds/node/)?##; s# failed.*##' | sort -u > failures.txt || true
           fi

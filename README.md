@@ -148,18 +148,22 @@ opkg update
 разделена:
 
 ```
-plan (10 мин)  ─┬─ build-node      node + node-npm + node-yarn        ~1–1.5 ч
-                ├─ build-modules   shard 1..N (остальные пакеты)      ~2–3 ч
-                └─ deploy          merge → Packages(.gz/.sig) → gh-pages/packages
+plan (1 мин) ── build-node   node + node-npm + node-yarn            ~1–1.5 ч
+                     │  артефакт node-state: staging_dir + штампы сборки
+                     ├─ build-modules  shard 1..N (только модули)   ~1–1.5 ч
+                     └─ deploy         merge → Packages(.gz/.sig) → gh-pages/packages
 ```
 
-* **plan** — читает `sha256sums` релиза, находит имя SDK и его sha256, раскладывает шарды.
-* **build-node** — самый дорогой кусок (сборка V8). Отдельная джоба, чтобы не растягивать шарды.
-  Пакет `node-npm` объявлен внутри `node/Makefile`, поэтому собирается вместе с `node`.
-* **build-modules** — каталоги `package/feeds/node/*` делятся round-robin на N шардов
-  (`idx % N`). Пакеты собираются батчами по 10 одним `make -j -k`; если батч упал —
-  пересборка по одному, чтобы один битый пакет не съедал остальные. Итог — `failures.txt`,
-  его видно в `$GITHUB_STEP_SUMMARY` и в артефакте логов.
+* **plan** — читает `sha256sums` релиза, находит имя SDK и его sha256, выбирает ветку
+  node-фида и раскладывает шарды.
+* **build-node** — самый дорогой кусок (сборка V8). Пакет `node-npm` объявлен внутри
+  `node/Makefile`, поэтому собирается вместе с `node`. В конце упаковывает `node-state`:
+  `staging_dir` целиком + `build_dir/target-*/node-*` со штампами `.built`/`.installed`.
+* **build-modules** — ждут `build-node`, распаковывают `node-state` в свой SDK и собирают
+  только модули. Без этого каждый шард собирал бы Node сам: у 140 из 150 пакетов фида
+  стоит `PKG_BUILD_DEPENDS:=node/host`. Сборка идёт **одним** вызовом `make -k` на шард —
+  повторные вызовы в той же песочнице заставляют OpenWrt перегенерировать `.config`
+  и запускать `clean-build` (полная пересборка node/openssl).
 * **deploy** — скачивает все ipk, кладёт их в `bin/packages/<arch>/node`, генерирует
   `Packages`/`Packages.gz`, подписывает `usign`, проверяет подпись, публикует в `gh-pages`
   и делает smoke-test опубликованного `Packages`.
@@ -178,10 +182,11 @@ Actions → **Build OpenWRT Node Packages** → **Run workflow**.
 | `version` | `24.10.8` | релиз OpenWRT, из которого берётся SDK |
 | `target` | `mediatek/filogic` | board/subtarget |
 | `arch` | `aarch64_cortex-a53` | архитектура пакетов в фиде |
-| `shards` | `2` | на сколько джоб делить «остальные» пакеты |
+| `shards` | `3` | на сколько джоб делить «остальные» пакеты |
 
-Если modules-шарды подбираются к 4–5 часам — увеличь `shards` до `3`/`4` при запуске,
-файл менять не нужно. Шарды независимы, берут SDK из кэша и пишут в свои артефакты.
+Если modules-шарды подбираются к 4–5 часам — увеличь `shards`: теперь, когда Node
+собирается один раз, время стены ≈ время `build-node` + время самого шарда, поэтому
+`3`–`4` шарда дают почти линейный выигрыш. Файл менять не нужно — это input запуска.
 
 Ветка node-фида выводится из `version` автоматически: `24.10.8` → `openwrt-24.10`
 (у nxhack своя ветка на каждый релиз OpenWRT; `master` тянет Node 26 и пакеты, которым нужен
@@ -224,6 +229,7 @@ git add key-build.pub && git commit -m "rotate feed signing key"
 
 | артефакт | содержимое | хранение |
 |---|---|---|
+| `node-state` | `staging_dir` + штампы сборки Node (передаётся в шарды) | 3 дня |
 | `ipk-node`, `ipk-shard-N` | собранные ipk (передаются в deploy) | 3 дня |
 | `logs-node`, `logs-shard-N` | `build.log`, `failures.txt`, `shard-list.txt`, `sdk/logs/` | 14 дней |
 
