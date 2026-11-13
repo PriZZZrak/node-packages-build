@@ -1,115 +1,257 @@
-# OpenWRT Node Packages - GitHub Actions Build
+# node-packages-build
 
-This repository contains a GitHub Actions workflow that builds **Node.js packages** from the [nxhack/openwrt-node-packages](https://github.com/nxhack/openwrt-node-packages) feed for **OpenWRT 24.10.6** on **mediatek/filogic** (`aarch64_cortex-a53`).
+Собственный opkg-фид с пакетами Node.js, собранными из фида
+[nxhack/openwrt-node-packages](https://github.com/nxhack/openwrt-node-packages) под OpenWRT 24.10.
 
-The workflow produces a signed opkg repository published to GitHub Pages, ready to add as a custom feed on your router.
+| параметр | значение |
+|---|---|
+| URL фида | `https://prizzzrak.github.io/node-packages-build/packages/aarch64_cortex-a53/node` |
+| Архитектура | `aarch64_cortex-a53` (mediatek/filogic: MT7981, MT7986 и т.п.) |
+| Node.js | `node127` 22.23.4 (LTS, предоставляет виртуальный `node`) |
+| Пакетов | 142, суммарно ~381 МБ ipk |
+| Подпись | `usign`, ключ `5b00e6cdb3a5881a` |
+| Сборка | GitHub Actions, `.github/workflows/build.yml` |
+| Запуск | только вручную: Actions → **Build OpenWRT Node Packages** → Run workflow |
 
-## How it works
+---
 
-The workflow runs on `ubuntu-latest` and manually downloads the OpenWRT SDK for mediatek/filogic 24.10.6, then builds all node packages. It:
+## 1. Подключение фида к роутеру
 
-1. Installs build dependencies (compilers, python, etc.)
-2. Downloads the official OpenWRT SDK from `downloads.openwrt.org`
-3. Configures the custom node feed
-4. Builds each package individually with `IGNORE_ERRORS=1`
-5. Generates a `Packages.gz` index and signs it
-6. Removes non-node subfeeds (base, luci, packages, routing, telephony, already available in official OpenWRT repos)
-7. Publishes only the `node/` subfeed to **GitHub Pages**
-8. Uploads built `.ipk` files and build logs as artifacts
+### 1.1. Проверить архитектуру
 
-## Usage
+Фиды в opkg привязаны к архитектуре — на другой арке пакеты не встанут:
 
-### Trigger a build
-
-- **Manually**: Go to your repository's **Actions** tab, select **Build OpenWRT Node Packages**, and click **Run workflow**.
-
-### Download packages
-
-After a successful build, you have three ways to access the packages:
-
-1. **GitHub Pages feed** (once configured, see below)
-2. **Artifacts**: Download `ipk-packages-aarch64_cortex-a53.zip` from the workflow run page
-3. **Build logs**: Download `build-logs.zip` to troubleshoot any failures
-
-## Configuring GitHub Pages
-
-After the first successful workflow run:
-
-1. Go to repository **Settings → Pages**
-2. Under **Source**, select **Deploy from a branch**
-3. Set **Branch** to `gh-pages` / `/ (root)`
-4. Click **Save**
-
-## Adding the feed to your router
-
-### Recommended: setup-feed.sh
-
-The repository includes `setup-feed.sh`, a convenience script that handles everything automatically:
-
-```bash
-wget -qO- https://raw.githubusercontent.com/YOUR_USERNAME/REPO/main/setup-feed.sh | sh
+```sh
+opkg print-architecture
 ```
 
-The script downloads the public signing key, extracts its fingerprint, installs it to `/etc/opkg/keys/`, and runs `opkg update`.
+Нужна строка `aarch64_cortex-a53` (это MT7981/MT7986: Xiaomi AX3000T, Redmi AX6000,
+RouteRich AX3000, GL-MT3000 и подобные). Если её нет — фид не подойдёт, нужна сборка
+под свой target (см. §4).
 
-### Manual method
+### 1.2. Быстрый способ (одна команда)
 
-Add this line to `/etc/opkg/customfeeds.conf`:
+Скрипт сам ставит ключ подписи, добавляет фид и обновляет списки:
 
-```
-src/gz custom_node https://YOUR_USERNAME.github.io/REPO/packages/aarch64_cortex-a53/node
-```
-
-Replace `YOUR_USERNAME` and `REPO` with your GitHub username and repository name.
-
-Then install the package signing key (required if `option check_signature 1` is set in `/etc/opkg.conf`):
-
-```bash
-# Download and install the public key
-FINGERPRINT=$(wget -qO- https://YOUR_USERNAME.github.io/REPO/packages/aarch64_cortex-a53/key-build.pub | \
-  usign -F -p /dev/stdin)
-wget -qO /etc/opkg/keys/$FINGERPRINT \
-  https://YOUR_USERNAME.github.io/REPO/packages/aarch64_cortex-a53/key-build.pub
+```sh
+wget -qO- https://raw.githubusercontent.com/PriZZZrak/node-packages-build/main/setup-feed.sh | sh
 ```
 
-Then update and install:
+Он идемпотентен: повторный запуск не создаёт дублей в `/etc/opkg/customfeeds.conf`.
 
-```bash
+### 1.3. Вручную (три шага)
+
+**1) Ключ подписи.** `usign` есть в стоковой прошивке; если нет — `opkg install usign`.
+
+```sh
+cd /tmp
+wget -qO key-build.pub \
+  https://prizzzrak.github.io/node-packages-build/packages/aarch64_cortex-a53/key-build.pub
+FP=$(usign -F -p key-build.pub)
+mkdir -p /etc/opkg/keys
+cp key-build.pub "/etc/opkg/keys/$FP"
+echo "ключ: $FP"
+```
+
+**2) Строка фида** в `/etc/opkg/customfeeds.conf`:
+
+```sh
+echo 'src/gz custom_node https://prizzzrak.github.io/node-packages-build/packages/aarch64_cortex-a53/node' \
+  >> /etc/opkg/customfeeds.conf
+```
+
+**3) Обновить списки:**
+
+```sh
 opkg update
-opkg list | grep node
-opkg install node node-npm
 ```
 
-## Packages built
+В выводе должно появиться:
 
-The feed includes about 150 Node.js-related packages, with roughly 110 building successfully. Common packages:
+```
+Downloading https://prizzzrak.github.io/.../node/Packages.gz
+Updated list of available packages in /var/opkg-lists/custom_node
+```
 
-- `node`, Node.js runtime (v22, Active LTS)
-- `node-npm`, npm package manager
-- `node-yarn`, Yarn package manager
-- Various Node.js modules and tools
+Если вместо этого `Signature check failed` — не встал ключ (шаг 1) или он битый.
+Если `wget: not an http or ftp url` / TLS-ошибка — нет `ca-bundle` (`opkg install ca-bundle`).
 
-See the [nxhack/openwrt-node-packages](https://github.com/nxhack/openwrt-node-packages) repository for the full list.
+### 1.4. Установка пакетов
 
-## Workflow file
+```sh
+opkg list | grep '^node'          # что доступно
+opkg install node127             # сам рантайм (18 МБ, ~54 МБ после установки)
+opkg install node-npm node-yarn  # npm/npx и yarn
+```
 
-The build workflow is at `.github/workflows/build.yml`. Key details:
+`node` — это **виртуальное** имя: его предоставляет пакет `node127`, поэтому ставь по
+фактическому имени. Зависимости вида `Depends: libc, node127` разрешаются сами.
 
-- **Runner**: `ubuntu-latest` (no container, fresh Ubuntu with modern glibc/gcc for Node.js 22 support)
-- **Timeout**: 480 minutes (8 hours)
-- **SDK**: Downloaded fresh from `downloads.openwrt.org/releases/24.10.6/targets/mediatek/filogic/`
-- **Feed**: `https://github.com/nxhack/openwrt-node-packages.git` (default branch — `master`)
-- **Node.js version**: `CONFIG_NODEJS_22=y` (Active LTS)
-- **Build**: Per-package loop with `IGNORE_ERRORS=1` and `CONFIG_AUTOREMOVE=y`
-- **Index**: `Packages.gz` generated, signed with `usign`, public key published alongside packages
-- **Deploy**: Only the `node/` subfeed is deployed to GitHub Pages via `peaceiris/actions-gh-pages@v4`; other subfeeds are stripped
-- **Signing**: Private signing key sourced from GitHub Secret `OPKG_SIGN_KEY`; public key `key-build.pub` is committed to the repository
+Модули ставятся так же: `opkg install node-red`, `opkg install node-homebridge-hue` и т.д.
+Пакеты, которым нужен нативный C++ аддон, могут отсутствовать в фиде — сборка таких
+пакетов падает на кросс-компиляции `node-gyp` (см. §6).
 
-## Notes
+### 1.5. Пережить sysupgrade
 
-- Build can take **1+ hours** depending on how many packages are built
-- `IGNORE_ERRORS=1` ensures the build continues even if some packages fail
-- Only the `aarch64_cortex-a53` architecture is built (mediatek/filogic)
-- Package signing is enabled. The public key (`key-build.pub`) is committed to the repo, the private key is stored as the `OPKG_SIGN_KEY` GitHub Secret
-- Native C++ addons for aarch64 may fail to build due to node-gyp cross-compilation limitations
-- Some packages are marked `@BROKEN` or `@NODEJS_24:BROKEN` in the upstream feed and are skipped
+Файлы фида лежат в `/etc`, но перечень сохраняемого при обновлении прошивки зависит от сборки.
+Проверь:
+
+```sh
+grep -E 'opkg' /lib/upgrade/keep.d/base
+```
+
+Если `/etc/opkg/customfeeds.conf` или `/etc/opkg/keys` там нет — добавь в `/etc/sysupgrade.conf`:
+
+```
+/etc/opkg/customfeeds.conf
+/etc/opkg/keys/
+```
+
+После обновления прошивки списки всё равно надо обновить один раз: `opkg update`
+(сами списки лежат в `/tmp` и не сохраняются).
+
+### 1.6. Убрать фид
+
+```sh
+sed -i '/custom_node/d' /etc/opkg/customfeeds.conf
+rm -f /etc/opkg/keys/5b00e6cdb3a5881a*
+opkg update
+```
+
+Уже установленные пакеты останутся; удалять их — `opkg remove <имя>`.
+
+---
+
+## 2. Что в фиде
+
+142 пакета. Основное:
+
+| пакет | что это |
+|---|---|
+| `node127` | Node.js 22.23.4 (LTS), `Provides: node`, `ABIVersion: 127` |
+| `node-npm`, `node-yarn` | npm/npx 22.23.4, yarn 1.22.22 |
+| `node-red`, `node-red-contrib-*` | Node-RED и контрибы |
+| `node-homebridge-*` | Homebridge и плагины (hue, miot, mqttthing, camera-ui, …) |
+| `node-pty`, `node-serialport`, `node-sqlite3`, … | модули с нативными аддонами |
+
+Самые крупные ipk: `node-homebridge-hue` 28 МБ, `node-homebridge-mqttthing` 28 МБ,
+`node-camera.ui` 20 МБ, `node-pty` 19 МБ, `node-red` 18.5 МБ.
+
+Не публикуются фиды `base`, `packages`, `luci`, `routing`, `telephony` — они уже есть в
+официальном репозитории OpenWRT, и дублировать их в своём фиде опасно.
+
+---
+
+## 3. Как это собирается
+
+Один прогон всех пакетов не влезает в лимит GitHub в 6 часов на job, поэтому сборка
+разделена:
+
+```
+plan (10 мин)  ─┬─ build-node      node + node-npm + node-yarn        ~1–1.5 ч
+                ├─ build-modules   shard 1..N (остальные пакеты)      ~2–3 ч
+                └─ deploy          merge → Packages(.gz/.sig) → gh-pages/packages
+```
+
+* **plan** — читает `sha256sums` релиза, находит имя SDK и его sha256, раскладывает шарды.
+* **build-node** — самый дорогой кусок (сборка V8). Отдельная джоба, чтобы не растягивать шарды.
+  Пакет `node-npm` объявлен внутри `node/Makefile`, поэтому собирается вместе с `node`.
+* **build-modules** — каталоги `package/feeds/node/*` делятся round-robin на N шардов
+  (`idx % N`). Пакеты собираются батчами по 10 одним `make -j -k`; если батч упал —
+  пересборка по одному, чтобы один битый пакет не съедал остальные. Итог — `failures.txt`,
+  его видно в `$GITHUB_STEP_SUMMARY` и в артефакте логов.
+* **deploy** — скачивает все ipk, кладёт их в `bin/packages/<arch>/node`, генерирует
+  `Packages`/`Packages.gz`, подписывает `usign`, проверяет подпись, публикует в `gh-pages`
+  и делает smoke-test опубликованного `Packages`.
+
+Ветка `gh-pages` публикуется с `force_orphan` — каждый прогон это один коммит с текущим
+состоянием фида, история не растёт.
+
+---
+
+## 4. Запуск сборки
+
+Actions → **Build OpenWRT Node Packages** → **Run workflow**.
+
+| input | по умолчанию | смысл |
+|---|---|---|
+| `version` | `24.10.8` | релиз OpenWRT, из которого берётся SDK |
+| `target` | `mediatek/filogic` | board/subtarget |
+| `arch` | `aarch64_cortex-a53` | архитектура пакетов в фиде |
+| `shards` | `2` | на сколько джоб делить «остальные» пакеты |
+
+Если modules-шарды подбираются к 4–5 часам — увеличь `shards` до `3`/`4` при запуске,
+файл менять не нужно. Шарды независимы, берут SDK из кэша и пишут в свои артефакты.
+
+Ветка node-фида выводится из `version` автоматически: `24.10.8` → `openwrt-24.10`
+(у nxhack своя ветка на каждый релиз OpenWRT; `master` тянет Node 26 и пакеты, которым нужен
+более свежий OpenWRT). Если такой ветки нет — сборка предупредит и возьмёт `master`.
+
+Сборка под другую арку: поменяй `target`/`arch` в inputs (например
+`mediatek/mt7622` + `aarch64_cortex-a53`, или `ramips/mt7621` + `mipsel_24kc`).
+URL фида тогда изменится — `.../packages/<arch>/node`.
+
+Проверка перед деплоем: если пакетов меньше `MIN_PACKAGES` (100), публикация блокируется —
+чтобы упавшая сборка не затёрла рабочий фид пустым индексом.
+
+---
+
+## 5. Подпись пакетов
+
+`opkg` проверяет подпись индекса, если в `/etc/opkg.conf` стоит `option check_signature 1`
+(по умолчанию в OpenWRT так и есть).
+
+* Публичный ключ лежит в репозитории (`key-build.pub`) и копируется в фид:
+  `.../packages/aarch64_cortex-a53/key-build.pub`.
+* Приватный ключ хранится **только** в секрете `OPKG_SIGN_KEY` (base64 от usign-ключа),
+  в репозиторий не попадает (`.gitignore`: `key-build`, `key-build.secret.b64`).
+* `deploy` сверяет отпечаток приватного ключа с `key-build.pub`, валидирует
+  `Packages.sig` через `usign -V` и падает, если подпись не сошлась. Неподписанный
+  фид не публикуется.
+
+Ротация ключа (сломает установку у всех, кто уже подключил фид — им нужно заново
+импортировать ключ по §1.3):
+
+```sh
+usign -G -s key-build -p key-build.pub -c "node-packages-build feed"
+base64 -w0 key-build > key-build.secret.b64   # содержимое → секрет OPKG_SIGN_KEY
+git add key-build.pub && git commit -m "rotate feed signing key"
+```
+
+---
+
+## 6. Артефакты, кэши и диагностика
+
+| артефакт | содержимое | хранение |
+|---|---|---|
+| `ipk-node`, `ipk-shard-N` | собранные ipk (передаются в deploy) | 3 дня |
+| `logs-node`, `logs-shard-N` | `build.log`, `failures.txt`, `shard-list.txt`, `sdk/logs/` | 14 дней |
+
+Кэшируются только SDK-тарболл (по sha256) и `sdk/dl`; сам SDK каждый раз распаковывается
+заново, поэтому «замороженного» состояния сборки не бывает. `sdk/dl` имеет статический
+ключ — если нужно принудительно перекачать исходники, поменяй `v1` в ключе.
+
+Если пакета нет в фиде:
+
+1. посмотри `$GITHUB_STEP_SUMMARY` прогона — там списки упавших пакетов по шардам;
+2. скачай `logs-shard-N` и открой `log-<пакет>.txt`;
+3. типовые причины: `node-gyp` (нативная сборка под cross), `@BROKEN` в апстриме,
+   несовместимая с Node 22 версия модуля.
+
+---
+
+## 7. Известные ограничения
+
+* Только `aarch64_cortex-a53` — другие арки не собираются (см. §4).
+* Два пакета зависят от виртуального `nodejs`, которого в фиде никто не предоставляет:
+  `node-homekit2mqtt`, `node-red-contrib-homekit-bridged`. Они индексируются, но не
+  установятся, пока апстрим не поправит `DEPENDS`.
+* `node`/`node127` ~54 МБ в распакованном виде — на роутере с 16 МБ flash места нет,
+  нужен USB-накопитель или extroot.
+* Фиды `base`, `packages`, `luci`, … из фида удалены намеренно: их место — официальный
+  репозиторий OpenWRT.
+* Сборка не привязана к коммиту апстрима: node-фид забирается из ветки релиза
+  (`openwrt-24.10`), поэтому версии пакетов меняются от прогона к прогону.
+  `Check Upstream Updates` следит за той же веткой и сам запускает сборку при новых коммитах.
+* GitHub Pages: сайт весит ~381 МБ и отдаётся только по прямым путям — корень
+  `/node-packages-build/` отдаёт 404, это нормально (индекса нет, он не нужен).
