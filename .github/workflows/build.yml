@@ -1,162 +1,597 @@
+# Сборка node-пакетов из фида nxhack/openwrt-node-packages под OpenWRT.
+#
+# Почему несколько джоб, а не одна:
+#   весь фид (~150 пакетов) за один прогон упирается в лимит GitHub в 6 часов на job.
+#   Поэтому дорогой рантайм Node.js (+npm/yarn) собирается отдельной джобой build-node,
+#   а остальные пакеты делятся на N шардов (build-modules, matrix) и идут параллельно.
+#   Индекс Packages и подпись генерируются один раз в deploy — после мерджа артефактов,
+#   чтобы фид оставался единым и подпись не разъезжалась.
+#
+# Схема:
+#   plan (10m) ─┬─ build-node   (node, node-npm, node-yarn)          ~1-1.5h
+#               ├─ build-modules shard 1..N (остальные пакеты)       ~2-3h
+#               └─ deploy: merge → Packages(+.sig) → gh-pages/packages
+#
+# Ветка gh-pages публикуется через force_orphan — история не растёт гигабайтами.
+
 name: Build OpenWRT Node Packages
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Версия OpenWRT (для SDK)"
+        required: true
+        default: "24.10.8"
+      target:
+        description: "Target (board/subtarget)"
+        required: true
+        default: "mediatek/filogic"
+      arch:
+        description: "Архитектура пакетов"
+        required: true
+        default: "aarch64_cortex-a53"
+      shards:
+        description: "Сколько джоб отдать под «остальные» пакеты"
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - "3"
+          - "4"
+        default: "2"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
-  SDK_DIR: ${{ github.workspace }}/sdk
+  NODE_FEED_URL: https://github.com/nxhack/openwrt-node-packages.git
+  # Минимум пакетов в фиде: защита от публикации пустого/битого индекса
+  MIN_PACKAGES: "100"
+
+permissions:
+  contents: write
 
 jobs:
-  build:
-    name: mediatek/filogic (24.10.8)
+  # ---------------------------------------------------------------- plan
+  plan:
+    name: plan
     runs-on: ubuntu-24.04
-    timeout-minutes: 480
-    permissions:
-      contents: write
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.p.outputs.version }}
+      target: ${{ steps.p.outputs.target }}
+      arch: ${{ steps.p.outputs.arch }}
+      sdk_url: ${{ steps.p.outputs.sdk_url }}
+      sdk_file: ${{ steps.p.outputs.sdk_file }}
+      sdk_sha: ${{ steps.p.outputs.sdk_sha }}
+      cache_slug: ${{ steps.p.outputs.cache_slug }}
+      shard_count: ${{ steps.p.outputs.shard_count }}
+      shards: ${{ steps.p.outputs.shards }}
+    steps:
+      - name: Resolve SDK tarball and shard plan
+        id: p
+        env:
+          IN_VERSION: ${{ inputs.version }}
+          IN_TARGET: ${{ inputs.target }}
+          IN_ARCH: ${{ inputs.arch }}
+          IN_SHARDS: ${{ inputs.shards }}
+        run: |
+          set -euo pipefail
+          V="${IN_VERSION:-24.10.8}"
+          T="${IN_TARGET:-mediatek/filogic}"
+          A="${IN_ARCH:-aarch64_cortex-a53}"
+          N="${IN_SHARDS:-2}"
+          export N
+
+          base="https://downloads.openwrt.org/releases/${V}/targets/${T}"
+          sums="$(curl -fsSL "$base/sha256sums")"
+          f="$(printf '%s\n' "$sums" | grep -oP 'openwrt-sdk-[^ ]+Linux-x86_64\.tar\.(xz|zst)' | head -1)"
+          [ -n "$f" ] || { echo "::error::не найден SDK в $base/sha256sums"; exit 1; }
+          sha="$(printf '%s\n' "$sums" | grep -F "$f" | awk '{print $1}')"
+          slug="$(printf '%s-%s' "$V" "$T" | tr '/, ' '---')"
+
+          shards_json="$(python3 -c "import json,os;print(json.dumps(list(range(1,int(os.environ['N'])+1))))")"
+
+          {
+            echo "version=$V"
+            echo "target=$T"
+            echo "arch=$A"
+            echo "sdk_url=$base/$f"
+            echo "sdk_file=$f"
+            echo "sdk_sha=$sha"
+            echo "cache_slug=$slug"
+            echo "shard_count=$N"
+            echo "shards=$shards_json"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### План сборки"
+            echo ""
+            echo "| параметр | значение |"
+            echo "|---|---|"
+            echo "| OpenWRT | \`$V\` |"
+            echo "| Target | \`$T\` |"
+            echo "| Arch | \`$A\` |"
+            echo "| SDK | \`$f\` |"
+            echo "| Шардов для пакетов | \`$N\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ----------------------------------------------------------- build-node
+  # Самый дорогой кусок: рантайм Node.js + npm + yarn (npm/yarn пакуются из дерева node).
+  build-node:
+    name: build node runtime
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    env:
+      SDK_DIR: ${{ github.workspace }}/sdk
+      ARCH: ${{ needs.plan.outputs.arch }}
     steps:
       - uses: actions/checkout@v5
 
-      - name: Install OpenWRT build dependencies
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+
+      - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential ccache curl file gawk \
-            g++-multilib gcc-multilib genisoimage git-core libatomic1 libdw-dev \
-            libelf-dev libncurses5-dev locales python3 python3-setuptools \
-            python3-pyelftools rsync subversion swig unzip wget zstd
+          sudo apt-get install -y --no-install-recommends \
+            build-essential ccache curl file gawk g++-multilib gcc-multilib \
+            genisoimage git-core libatomic1 libdw-dev libelf-dev libncurses-dev \
+            locales python3 python3-setuptools python3-pyelftools rsync \
+            subversion swig unzip wget zstd
 
-      - name: Cache OpenWRT SDK
-        id: sdk-cache
+      - name: Cache SDK tarball
         uses: actions/cache@v5
         with:
-          path: ${{ env.SDK_DIR }}
-          key: openwrt-sdk-24.10.8-mediatek-filogic-1
+          path: ${{ github.workspace }}/.sdk-tarball
+          # tarball не меняется после скачивания → кэш детерминированный, SDK всегда распаковывается свежим
+          key: sdk-tarball-${{ needs.plan.outputs.cache_slug }}-${{ needs.plan.outputs.sdk_sha }}
 
-      - name: Download and extract OpenWRT SDK
-        if: steps.sdk-cache.outputs.cache-hit != 'true'
-        run: |
-          TARGET="mediatek/filogic"
-          VERSION="24.10.8"
-          BASE_URL="https://downloads.openwrt.org/releases/$VERSION/targets/$TARGET"
-
-          mkdir -p "$SDK_DIR"
-          cd "$SDK_DIR"
-
-          wget -nv "$BASE_URL/sha256sums" -O sha256sums
-
-          SDK_FILE=$(grep -oP 'openwrt-sdk-[^ ]+Linux-x86_64\.tar\.(xz|zst)' sha256sums | head -1)
-          echo "SDK: $SDK_FILE"
-
-          wget -nv "$BASE_URL/$SDK_FILE"
-          grep -F "$SDK_FILE" sha256sums | sha256sum -c
-
-          tar xf "$SDK_FILE" --strip=1 --no-same-owner
-          rm -f "$SDK_FILE" sha256sums
-
-      - name: Cache SDK dl directory
+      - name: Cache dl
         uses: actions/cache@v5
         with:
           path: ${{ env.SDK_DIR }}/dl
-          key: dl-cache-${{ github.run_id }}
-          restore-keys: |
-            dl-cache-
+          # ключ статический: источники не перезаписываются, -v1 бампать при желании обновить
+          key: dl-${{ needs.plan.outputs.cache_slug }}-v1
 
-      - name: Add node feed
+      - name: Fetch and extract SDK
+        env:
+          SDK_URL: ${{ needs.plan.outputs.sdk_url }}
+          SDK_SHA: ${{ needs.plan.outputs.sdk_sha }}
+          SDK_FILE: ${{ needs.plan.outputs.sdk_file }}
+        run: |
+          set -euo pipefail
+          mkdir -p .sdk-tarball "$SDK_DIR"
+          tb=".sdk-tarball/${SDK_FILE}"
+          if [ ! -f "$tb" ] || [ "$(sha256sum "$tb" | cut -d' ' -f1)" != "${SDK_SHA}" ]; then
+            rm -f "$tb"
+            wget -nv -O "$tb" "${SDK_URL}"
+          fi
+          echo "${SDK_SHA}  $tb" | sha256sum -c -
+          tar xf "$tb" -C "$SDK_DIR" --strip=1 --no-same-owner
+          du -sh "$SDK_DIR"
+
+      - name: Prepare feeds and config
         working-directory: ${{ env.SDK_DIR }}
         run: |
-          # Always start fresh feeds.conf from default
+          set -euo pipefail
           cp feeds.conf.default feeds.conf
-          echo "src-git-full node https://github.com/nxhack/openwrt-node-packages.git" >> feeds.conf
-          # feeds update may fail for 'base' (detached HEAD from SDK tarball) — ignore
-          # Other built-in feeds (packages, luci, routing, telephony) are pinned commits, fine
-          # The 'node' feed is what we actually need
-          ./scripts/feeds update -a || true
-
-      - name: Install node packages and configure
-        working-directory: ${{ env.SDK_DIR }}
-        run: |
+          echo "src-git node ${NODE_FEED_URL}" >> feeds.conf
+          # 'base' в SDK — detached HEAD, его update штатно ругается; node-фид проверяем ниже
+          ./scripts/feeds update -a || echo "::warning::feeds update сообщил об ошибках (ожидаемо для 'base')"
+          [ -d feeds/node ] || { echo "::error::node-фид не скачался"; exit 1; }
           ./scripts/feeds install -a
-          # Remove packages feed's node (v20) so nxhack's node (v22 default) wins
+          # убираем node v20 из packages-фида, чтобы победил node из nxhack
           rm -rf package/feeds/packages/node*
           ./scripts/feeds install -f -a -p node
           make defconfig
-          echo 'CONFIG_NODEJS_22=y' >> .config
-          echo 'CONFIG_NODEJS_HOST_BIN=y' >> .config
-          echo 'CONFIG_CCACHE=y' >> .config
+          {
+            echo 'CONFIG_NODEJS_22=y'
+            echo 'CONFIG_NODEJS_HOST_BIN=y'
+            echo 'CONFIG_CCACHE=y'
+          } >> .config
           make defconfig
+          grep -q '^CONFIG_NODEJS_22=y' .config \
+            || echo "::warning::CONFIG_NODEJS_22 не применился, в конфиге: $(grep -o '^CONFIG_NODEJS_[0-9]*' .config | sort -u | tr '\n' ' ')"
+          df -h /
 
-      - name: Build all node packages
+      - name: Build node runtime
         working-directory: ${{ env.SDK_DIR }}
         run: |
-          rm -rf bin/
-          echo "=== Building all node feed packages ==="
-          targets=""
-          for d in package/feeds/node/*/; do
-            pkg="$(basename $d)"
-            targets="$targets package/feeds/node/$pkg/compile"
+          set -uo pipefail
+          : > failures.txt
+          targets=()
+          for p in node node-npm node-yarn; do
+            # пакеты фида установлены симлинками — проверяем через -e
+            [ -e "package/feeds/node/$p" ] && targets+=("package/feeds/node/$p/compile")
           done
-          make $targets -j$(nproc) IGNORE_ERRORS=1 \
-            BUILD_LOG=1 V=0 CONFIG_AUTOREMOVE=y
-
-      - name: Remove non-node feeds before deploy
-        working-directory: ${{ env.SDK_DIR }}
-        run: |
-          echo "=== Removing non-node feeds (available in official OpenWRT repos) ==="
-          ls -d bin/packages/aarch64_cortex-a53/*/
-          rm -rf bin/packages/aarch64_cortex-a53/{base,luci,packages,routing,telephony}
-          echo ""
-          echo "=== Remaining structure ==="
-          find bin/packages/aarch64_cortex-a53/ -type d | sort
-
-      - name: Generate package index and signing
-        working-directory: ${{ env.SDK_DIR }}
-        run: |
-          # Decode private signing key from GitHub Secret (never committed to repo)
-          if [ -n "${{ secrets.OPKG_SIGN_KEY }}" ]; then
-            echo "${{ secrets.OPKG_SIGN_KEY }}" | base64 -d > key-build
-          else
-            echo "WARNING: OPKG_SIGN_KEY secret not set — packages will NOT be signed"
+          if [ ${#targets[@]} -eq 0 ]; then
+            echo "::error::в node-фиде нет ни node, ни node-npm, ни node-yarn"
+            exit 1
           fi
-          # Copy public key from repo checkout (safe to commit — it's public)
-          cp -v ${{ github.workspace }}/key-build.pub .
+          echo "цели: ${targets[*]}"
+          rc=0
+          make "${targets[@]}" -j"$(nproc)" -k V=0 CONFIG_AUTOREMOVE=y 2>&1 | tee build-node.log || rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning::сборка рантайма сообщила об ошибках (rc=$rc) — смотрим ipk ниже"
+            echo "node-runtime" >> failures.txt
+          fi
+          ls -la bin/packages/"$ARCH"/node/*.ipk 2>/dev/null || echo "ipk пока нет"
 
-          echo "=== Generating package index ==="
-          make package/index V=s || true
-          echo ""
-          echo "=== IPK packages ==="
-          find bin/packages/ -name "*.ipk" 2>/dev/null | sort || true
-          echo ""
-          echo "Total: $(find bin/packages/ -name '*.ipk' 2>/dev/null | wc -l)"
-          echo ""
-          echo "=== Package index ==="
-          find bin/packages/ -name "Packages*" 2>/dev/null || true
-          echo ""
-          echo "=== Package signature ==="
-          find bin/packages/ -name "*.sig" 2>/dev/null || echo "No .sig files found"
-          echo ""
-          echo "=== Publish public key to feed ==="
-          cp key-build.pub bin/packages/aarch64_cortex-a53/
-          echo "key-build.pub copied to feed root"
-          echo ""
-          echo "=== Directory structure ==="
-          find bin/packages/ -type d 2>/dev/null | sort || true
+      - name: Collect ipk
+        env:
+          ARCH_OUT: ${{ needs.plan.outputs.arch }}
+        run: |
+          set -euo pipefail
+          out="${GITHUB_WORKSPACE}/dist/packages/${ARCH_OUT}/node"
+          mkdir -p "$out"
+          shopt -s nullglob
+          files=("$SDK_DIR"/bin/packages/"${ARCH_OUT}"/node/*.ipk)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::джоба не собрала ни одного ipk"
+            exit 1
+          fi
+          cp -v "${files[@]}" "$out/"
 
-      - name: Deploy to GitHub Pages
+      - name: Upload ipk
+        uses: actions/upload-artifact@v7
+        with:
+          name: ipk-node
+          path: dist/
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: error
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: logs-node
+          path: |
+            ${{ env.SDK_DIR }}/build-node.log
+            ${{ env.SDK_DIR }}/logs/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # -------------------------------------------------------- build-modules
+  # «Остальные» пакеты фида, разложенные по шардам (round-robin по именам каталогов).
+  build-modules:
+    name: shard ${{ matrix.shard }}/${{ needs.plan.outputs.shard_count }}
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
+    env:
+      SDK_DIR: ${{ github.workspace }}/sdk
+      ARCH: ${{ needs.plan.outputs.arch }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential ccache curl file gawk g++-multilib gcc-multilib \
+            genisoimage git-core libatomic1 libdw-dev libelf-dev libncurses-dev \
+            locales python3 python3-setuptools python3-pyelftools rsync \
+            subversion swig unzip wget zstd
+
+      - name: Cache SDK tarball
+        uses: actions/cache@v5
+        with:
+          path: ${{ github.workspace }}/.sdk-tarball
+          key: sdk-tarball-${{ needs.plan.outputs.cache_slug }}-${{ needs.plan.outputs.sdk_sha }}
+
+      - name: Cache dl
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.SDK_DIR }}/dl
+          key: dl-${{ needs.plan.outputs.cache_slug }}-v1
+
+      - name: Fetch and extract SDK
+        env:
+          SDK_URL: ${{ needs.plan.outputs.sdk_url }}
+          SDK_SHA: ${{ needs.plan.outputs.sdk_sha }}
+          SDK_FILE: ${{ needs.plan.outputs.sdk_file }}
+        run: |
+          set -euo pipefail
+          mkdir -p .sdk-tarball "$SDK_DIR"
+          tb=".sdk-tarball/${SDK_FILE}"
+          if [ ! -f "$tb" ] || [ "$(sha256sum "$tb" | cut -d' ' -f1)" != "${SDK_SHA}" ]; then
+            rm -f "$tb"
+            wget -nv -O "$tb" "${SDK_URL}"
+          fi
+          echo "${SDK_SHA}  $tb" | sha256sum -c -
+          tar xf "$tb" -C "$SDK_DIR" --strip=1 --no-same-owner
+          du -sh "$SDK_DIR"
+
+      - name: Prepare feeds and config
+        working-directory: ${{ env.SDK_DIR }}
+        run: |
+          set -euo pipefail
+          cp feeds.conf.default feeds.conf
+          echo "src-git node ${NODE_FEED_URL}" >> feeds.conf
+          ./scripts/feeds update -a || echo "::warning::feeds update сообщил об ошибках (ожидаемо для 'base')"
+          [ -d feeds/node ] || { echo "::error::node-фид не скачался"; exit 1; }
+          ./scripts/feeds install -a
+          rm -rf package/feeds/packages/node*
+          ./scripts/feeds install -f -a -p node
+          make defconfig
+          {
+            echo 'CONFIG_NODEJS_22=y'
+            echo 'CONFIG_NODEJS_HOST_BIN=y'
+            echo 'CONFIG_CCACHE=y'
+          } >> .config
+          make defconfig
+          df -h /
+
+      - name: Build shard packages
+        working-directory: ${{ env.SDK_DIR }}
+        env:
+          SHARD: ${{ matrix.shard }}
+          SHARDS: ${{ needs.plan.outputs.shard_count }}
+        run: |
+          set -uo pipefail
+          shopt -s nullglob
+          # node/node-npm/node-yarn собирает отдельная джоба build-node.
+          # Пакеты фида установлены симлинками, поэтому глоб с '/', а не find -type d.
+          pkgs=()
+          idx=0
+          for d in package/feeds/node/*/; do
+            name="$(basename "$d")"
+            case "$name" in
+              node|node-npm|node-yarn) continue ;;
+            esac
+            if (( idx % SHARDS == SHARD - 1 )); then
+              pkgs+=("$name")
+            fi
+            idx=$((idx + 1))
+          done
+          if [ ${#pkgs[@]} -gt 0 ]; then
+            printf '%s\n' "${pkgs[@]}" > shard-list.txt
+          else
+            : > shard-list.txt
+          fi
+          echo "шард ${SHARD}/${SHARDS}: ${#pkgs[@]} пакетов (всего каталогов: $idx)"
+
+          : > failures.txt
+          BATCH=10
+          total=${#pkgs[@]}
+          i=0
+          while (( i < total )); do
+            batch=("${pkgs[@]:i:BATCH}")
+            targets=()
+            for p in "${batch[@]}"; do targets+=("package/feeds/node/$p/compile"); done
+            echo "::group::batch $((i + 1))..$((i + ${#batch[@]}))"
+            if make "${targets[@]}" -j"$(nproc)" -k V=0 CONFIG_AUTOREMOVE=y 2>&1 | tee -a build.log; then
+              echo "::endgroup::"
+            else
+              # батч упал — добиваем по одному, чтобы один битый пакет не съел остальные
+              echo "::endgroup::"
+              for p in "${batch[@]}"; do
+                echo "::group::retry $p"
+                make "package/feeds/node/$p/compile" -j"$(nproc)" -k V=0 CONFIG_AUTOREMOVE=y \
+                  2>&1 | tee -a "log-${p}.txt" || echo "$p" >> failures.txt
+                echo "::endgroup::"
+              done
+            fi
+            i=$((i + BATCH))
+            df -h / | tail -1
+          done
+
+          echo "--- упало $(wc -l < failures.txt) ---"
+          cat failures.txt
+
+      - name: Collect ipk
+        env:
+          ARCH_OUT: ${{ needs.plan.outputs.arch }}
+        run: |
+          set -euo pipefail
+          out="${GITHUB_WORKSPACE}/dist/packages/${ARCH_OUT}/node"
+          mkdir -p "$out"
+          shopt -s nullglob
+          files=("$SDK_DIR"/bin/packages/"${ARCH_OUT}"/node/*.ipk)
+          if [ ${#files[@]} -gt 0 ]; then
+            cp -v "${files[@]}" "$out/"
+          fi
+          echo "ipk в шарде: $(find "$out" -name '*.ipk' | wc -l)"
+
+      - name: Upload ipk
+        uses: actions/upload-artifact@v7
+        with:
+          name: ipk-shard-${{ matrix.shard }}
+          path: dist/
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: warn
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: logs-shard-${{ matrix.shard }}
+          path: |
+            ${{ env.SDK_DIR }}/build.log
+            ${{ env.SDK_DIR }}/log-*.txt
+            ${{ env.SDK_DIR }}/failures.txt
+            ${{ env.SDK_DIR }}/shard-list.txt
+            ${{ env.SDK_DIR }}/logs/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### шард ${{ matrix.shard }}/${{ needs.plan.outputs.shard_count }}"
+            echo ""
+            echo "собрано ipk: \`$(find dist -name '*.ipk' 2>/dev/null | wc -l)\`"
+            echo ""
+            if [ -s "$SDK_DIR/failures.txt" ]; then
+              echo "**упавшие пакеты:**"
+              echo '```'
+              cat "$SDK_DIR/failures.txt"
+              echo '```'
+            else
+              echo "упавших пакетов нет"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # --------------------------------------------------------------- deploy
+  # Один общий индекс на все артефакты + подпись + публикация.
+  deploy:
+    name: index + publish
+    needs: [plan, build-node, build-modules]
+    if: ${{ !cancelled() && needs.build-node.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      SDK_DIR: ${{ github.workspace }}/sdk
+      ARCH: ${{ needs.plan.outputs.arch }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Cache SDK tarball
+        uses: actions/cache@v5
+        with:
+          path: ${{ github.workspace }}/.sdk-tarball
+          key: sdk-tarball-${{ needs.plan.outputs.cache_slug }}-${{ needs.plan.outputs.sdk_sha }}
+
+      - name: Fetch and extract SDK
+        env:
+          SDK_URL: ${{ needs.plan.outputs.sdk_url }}
+          SDK_SHA: ${{ needs.plan.outputs.sdk_sha }}
+          SDK_FILE: ${{ needs.plan.outputs.sdk_file }}
+        run: |
+          set -euo pipefail
+          mkdir -p .sdk-tarball "$SDK_DIR"
+          tb=".sdk-tarball/${SDK_FILE}"
+          if [ ! -f "$tb" ] || [ "$(sha256sum "$tb" | cut -d' ' -f1)" != "${SDK_SHA}" ]; then
+            rm -f "$tb"
+            wget -nv -O "$tb" "${SDK_URL}"
+          fi
+          echo "${SDK_SHA}  $tb" | sha256sum -c -
+          tar xf "$tb" -C "$SDK_DIR" --strip=1 --no-same-owner
+
+      - name: Download ipk artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+          pattern: ipk-*
+
+      - name: Generate index and sign
+        working-directory: ${{ env.SDK_DIR }}
+        env:
+          OPKG_SIGN_KEY: ${{ secrets.OPKG_SIGN_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${OPKG_SIGN_KEY:-}" ]; then
+            echo "::error::секрет OPKG_SIGN_KEY не задан — публиковать неподписанный фид нельзя"
+            exit 1
+          fi
+          printf '%s' "$OPKG_SIGN_KEY" | base64 -d > key-build
+          chmod 600 key-build
+          cp -v "$GITHUB_WORKSPACE/key-build.pub" .
+
+          usign="./staging_dir/host/bin/usign"
+          if [ ! -x "$usign" ]; then
+            found="$(command -v usign || true)"
+            if [ -n "$found" ]; then
+              usign="$found"
+            else
+              echo "usign в SDK нет — собираю из tools/usign"
+              make tools/usign/compile -j"$(nproc)" || true
+              usign="./staging_dir/host/bin/usign"
+            fi
+          fi
+          [ -x "$usign" ] || { echo "::error::usign не найден"; exit 1; }
+          priv="$("$usign" -F -p key-build)"
+          pub="$("$usign" -F -p key-build.pub)"
+          if [ "$priv" != "$pub" ]; then
+            echo "::error::OPKG_SIGN_KEY не соответствует key-build.pub ($priv != $pub)"
+            exit 1
+          fi
+          echo "ключ подписи: $pub"
+
+          mkdir -p bin/packages
+          cp -a "$GITHUB_WORKSPACE/dist/packages/." bin/packages/
+          cp -v key-build.pub "bin/packages/$ARCH/"
+
+          idx="bin/packages/$ARCH/node/Packages"
+          make defconfig >/dev/null 2>&1 || true
+          # per-feed индекс — то, что ждёт opkg (src/gz .../<arch>/node)
+          echo 'CONFIG_PER_FEED_REPO=y' >> .config
+          make defconfig >/dev/null 2>&1 || true
+
+          if ! make package/index V=s || [ ! -f "$idx" ]; then
+            echo "::warning::make package/index не дал per-feed индекс — генерирую напрямую"
+            for d in bin/packages/*/*/; do
+              [ -d "$d" ] || continue
+              ./scripts/ipkg-make-index.sh "$d" > "$d/Packages"
+              gzip -9nc "$d/Packages" > "$d/Packages.gz"
+              "$usign" -S -m "$d/Packages" -s key-build -x "$d/Packages.sig"
+            done
+          fi
+
+          [ -f "$idx" ] || { echo "::error::Packages не сгенерирован"; exit 1; }
+          [ -f "$idx.sig" ] || { echo "::error::Packages.sig нет — подпись не удалась"; exit 1; }
+          "$usign" -V -m "$idx" -x "$idx.sig" -p key-build.pub
+          echo "подпись проверена"
+
+          ipks="$(find bin/packages -name '*.ipk' | wc -l)"
+          inidx="$(grep -c '^Package:' "$idx")"
+          echo "ipk: $ipks, записей в индексе: $inidx"
+          [ "$ipks" -ge "${MIN_PACKAGES}" ] || { echo "::error::слишком мало пакетов ($ipks < $MIN_PACKAGES) — публикация отменена"; exit 1; }
+          [ "$inidx" -ge "${MIN_PACKAGES}" ] || { echo "::error::индекс неполный ($inidx < $MIN_PACKAGES)"; exit 1; }
+
+          {
+            echo "### Публикация"
+            echo ""
+            echo "- пакетов: \`$inidx\`"
+            echo "- объём: \`$(du -sh bin/packages | cut -f1)\`"
+            echo "- ключ: \`$pub\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ${{ env.SDK_DIR }}/bin/packages
           destination_dir: packages
+          # история ветки не должна расти на гигабайты каждый прогон
+          force_orphan: true
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
+          commit_message: "packages: ${{ needs.plan.outputs.version }} ${{ needs.plan.outputs.arch }}"
 
-      - name: Upload packages as artifact
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: ipk-packages-aarch64_cortex-a53
-          path: ${{ env.SDK_DIR }}/bin/packages/aarch64_cortex-a53/node/*.ipk
-
-      - name: Upload build logs
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: build-logs
-          path: ${{ env.SDK_DIR }}/logs/
+      - name: Smoke test published feed
+        run: |
+          set -euo pipefail
+          url="https://$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]' | cut -d/ -f1).github.io/$(echo '${{ github.repository }}' | cut -d/ -f2)/packages/${{ env.ARCH }}/node"
+          echo "проверяю $url"
+          for attempt in $(seq 1 20); do
+            if body="$(curl -fsSL "$url/Packages" 2>/dev/null)"; then
+              n="$(printf '%s\n' "$body" | grep -c '^Package:')"
+              echo "попытка $attempt: опубликовано пакетов: $n"
+              [ "$n" -ge "${MIN_PACKAGES}" ]
+              exit 0
+            fi
+            echo "попытка $attempt: индекса ещё нет, ждём 15с"
+            sleep 15
+          done
+          echo "::error::опубликованный индекс не читается: $url/Packages"
+          exit 1
