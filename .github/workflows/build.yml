@@ -67,8 +67,9 @@ jobs:
       sdk_file: ${{ steps.p.outputs.sdk_file }}
       sdk_sha: ${{ steps.p.outputs.sdk_sha }}
       cache_slug: ${{ steps.p.outputs.cache_slug }}
-      shard_count: ${{ steps.p.outputs.shard_count }}
       shards: ${{ steps.p.outputs.shards }}
+      shard_count: ${{ steps.p.outputs.shard_count }}
+      feeds_branch: ${{ steps.p.outputs.feeds_branch }}
     steps:
       - name: Resolve SDK tarball and shard plan
         id: p
@@ -92,6 +93,16 @@ jobs:
           sha="$(printf '%s\n' "$sums" | grep -F "$f" | awk '{print $1}')"
           slug="$(printf '%s-%s' "$V" "$T" | tr '/, ' '---')"
 
+          # Ветка node-фида под релиз: 24.10.8 -> openwrt-24.10 (у nxhack своя ветка на каждый релиз).
+          # master тянет самый новый Node (26.x) и пакеты, которым нужен более свежий OpenWRT.
+          fb="openwrt-${V%.*}"
+          if git ls-remote --exit-code --heads "${NODE_FEED_URL}" "$fb" >/dev/null 2>&1; then
+            echo "ветка node-фида: $fb"
+          else
+            echo "::warning::ветки $fb в node-фиде нет — беру master"
+            fb="master"
+          fi
+
           shards_json="$(python3 -c "import json,os;print(json.dumps(list(range(1,int(os.environ['N'])+1))))")"
 
           {
@@ -104,6 +115,7 @@ jobs:
             echo "cache_slug=$slug"
             echo "shard_count=$N"
             echo "shards=$shards_json"
+            echo "feeds_branch=$fb"
           } >> "$GITHUB_OUTPUT"
 
           {
@@ -115,6 +127,7 @@ jobs:
             echo "| Target | \`$T\` |"
             echo "| Arch | \`$A\` |"
             echo "| SDK | \`$f\` |"
+            echo "| Ветка node-фида | \`$fb\` |"
             echo "| Шардов для пакетов | \`$N\` |"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -178,10 +191,12 @@ jobs:
 
       - name: Prepare feeds and config
         working-directory: ${{ env.SDK_DIR }}
+        env:
+          FEEDS_BRANCH: ${{ needs.plan.outputs.feeds_branch }}
         run: |
           set -euo pipefail
           cp feeds.conf.default feeds.conf
-          echo "src-git node ${NODE_FEED_URL}" >> feeds.conf
+          echo "src-git node ${NODE_FEED_URL};${FEEDS_BRANCH}" >> feeds.conf
           # 'base' в SDK — detached HEAD, его update штатно ругается; node-фид проверяем ниже
           ./scripts/feeds update -a || echo "::warning::feeds update сообщил об ошибках (ожидаемо для 'base')"
           [ -d feeds/node ] || { echo "::error::node-фид не скачался"; exit 1; }
@@ -320,10 +335,12 @@ jobs:
 
       - name: Prepare feeds and config
         working-directory: ${{ env.SDK_DIR }}
+        env:
+          FEEDS_BRANCH: ${{ needs.plan.outputs.feeds_branch }}
         run: |
           set -euo pipefail
           cp feeds.conf.default feeds.conf
-          echo "src-git node ${NODE_FEED_URL}" >> feeds.conf
+          echo "src-git node ${NODE_FEED_URL};${FEEDS_BRANCH}" >> feeds.conf
           ./scripts/feeds update -a || echo "::warning::feeds update сообщил об ошибках (ожидаемо для 'base')"
           [ -d feeds/node ] || { echo "::error::node-фид не скачался"; exit 1; }
           ./scripts/feeds install -a
