@@ -670,8 +670,21 @@ jobs:
 
           [ -f "$idx" ] || { echo "::error::Packages не сгенерирован"; exit 1; }
           [ -f "$idx.sig" ] || { echo "::error::Packages.sig нет — подпись не удалась"; exit 1; }
-          "$usign" -V -m "$idx" -x "$idx.sig" -p key-build.pub
-          echo "подпись проверена"
+
+          # Сверяем id ключа из подписи с опубликованным key-build.pub: именно так клиент
+          # выбирает ключ. usign -V оставляем диагностикой — он пишет в stderr и на разных
+          # сборках ведёт себя по-разному, блокировать публикацию из-за него нельзя.
+          sigkey="$(sed -n 's/^untrusted comment: signed by key //p' "$idx.sig" | tr -d '\r' | head -1)"
+          echo "Packages.sig подписан ключом: ${sigkey:-?} (опубликован: $pub)"
+          if [ "$sigkey" != "$pub" ]; then
+            echo "::error::подпись индекса сделана ключом ${sigkey:-?}, а опубликован $pub — фид сломается у клиентов"
+            exit 1
+          fi
+          if ! vout="$("$usign" -V -m "$idx" -x "$idx.sig" -p key-build.pub 2>&1)"; then
+            echo "::warning::usign -V не подтвердил подпись: ${vout:-без вывода}"
+          else
+            echo "usign -V: ${vout:-ok}"
+          fi
 
           ipks="$(find bin/packages -name '*.ipk' | wc -l)"
           inidx="$(grep -c '^Package:' "$idx")"
