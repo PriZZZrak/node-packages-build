@@ -653,20 +653,32 @@ jobs:
           cp -v key-build.pub "bin/packages/$ARCH/"
 
           idx="bin/packages/$ARCH/node/Packages"
-          make defconfig >/dev/null 2>&1 || true
-          # per-feed индекс — то, что ждёт opkg (src/gz .../<arch>/node)
-          echo 'CONFIG_PER_FEED_REPO=y' >> .config
-          make defconfig >/dev/null 2>&1 || true
 
-          if ! make package/index V=s || [ ! -f "$idx" ]; then
-            echo "::warning::make package/index не дал per-feed индекс — генерирую напрямую"
-            for d in bin/packages/*/*/; do
-              [ -d "$d" ] || continue
-              ./scripts/ipkg-make-index.sh "$d" > "$d/Packages"
-              gzip -9nc "$d/Packages" > "$d/Packages.gz"
-              "$usign" -S -m "$d/Packages" -s key-build -x "$d/Packages.sig"
-            done
+          # ipkg-make-index.sh зовёт "$MKHASH sha256 <файл>", а в голом SDK (без фидов)
+          # MKHASH не задан — отсюда был "sha256: command not found" (exit 127).
+          mkhash="staging_dir/host/bin/mkhash"
+          if [ -x "$mkhash" ]; then
+            export MKHASH="$PWD/$mkhash"
+            echo "MKHASH: $MKHASH"
+          else
+            shim="$RUNNER_TEMP/bin"
+            mkdir -p "$shim"
+            printf '%s\n' '#!/bin/sh' 'shift' 'sha256sum "$@" | cut -d" " -f1' > "$shim/mkhash"
+            chmod +x "$shim/mkhash"
+            export MKHASH="$shim/mkhash"
+            echo "MKHASH: обёртка над sha256sum"
           fi
+
+          # Индекс генерируем сами, без make package/index: в SDK без фидов он кладёт
+          # индекс не туда, где его ждёт opkg (src/gz .../<arch>/node). Скрипт запускаем
+          # внутри каталога фида, иначе в Filename попадёт полный путь и opkg его не найдёт.
+          for d in bin/packages/*/*/; do
+            [ -d "$d" ] || continue
+            ( cd "$d" && "$SDK_DIR/scripts/ipkg-make-index.sh" . > Packages )
+            gzip -9nc "$d/Packages" > "$d/Packages.gz"
+            "$usign" -S -m "$d/Packages" -s key-build -x "$d/Packages.sig"
+            echo "индекс: $d — $(grep -c '^Package:' "$d/Packages") пакетов"
+          done
 
           [ -f "$idx" ] || { echo "::error::Packages не сгенерирован"; exit 1; }
           [ -f "$idx.sig" ] || { echo "::error::Packages.sig нет — подпись не удалась"; exit 1; }
