@@ -113,7 +113,7 @@ jobs:
 
           # Ключ кэша собранного Node. Меняется при смене SDK, таргета или коммита фида,
           # поэтому при обновлении апстрима Node пересоберётся один раз и снова закэшируется.
-          node_key="node-state-${slug}-${feeds_sha:0:16}"
+          node_key="node-state-v2-${slug}-${feeds_sha:0:16}"
 
           shards_json="$(python3 -c "import json,os;print(json.dumps(list(range(1,int(os.environ['N'])+1))))")"
 
@@ -199,7 +199,7 @@ jobs:
           # источник/Makefile (штампы .prepared завязаны на md5 каталога пакета).
           key: ${{ needs.plan.outputs.node_key }}
           restore-keys: |
-            node-state-${{ needs.plan.outputs.cache_slug }}-
+            node-state-v2-${{ needs.plan.outputs.cache_slug }}-
 
       - name: Fetch and extract SDK
         env:
@@ -276,7 +276,10 @@ jobs:
           rc=0
           # РОВНО ОДИН вызов make: повторные вызовы в той же песочнице заставляют OpenWrt
           # перегенерировать .config и запускать clean-build → полная пересборка node/openssl.
-          make "${targets[@]}" -j"$(nproc)" -k V=0 2>&1 | tee build-node.log || rc=$?
+          # CONFIG_AUTOREMOVE обязателен: с ним штамп .prepared считается по содержимому
+          # (find_md5_reproducible), а без него — с mtime файлов (find_md5), и тогда
+          # перенесённое состояние в шардах не совпадает и Node собирается заново.
+          make "${targets[@]}" -j"$(nproc)" -k V=0 CONFIG_AUTOREMOVE=y 2>&1 | tee build-node.log || rc=$?
           if [ "$rc" -ne 0 ]; then
             echo "::warning::сборка рантайма сообщила об ошибках (rc=$rc) — смотрим ipk ниже"
             echo "node-runtime" >> failures.txt
@@ -314,12 +317,13 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
-          # Шардам нужны не только файлы, но и штампы сборки (.installed / .built),
-          # иначе make пересоберёт node с нуля. Штампы лежат в staging_dir и в build_dir.
+          # Шардам нужны не только файлы, но и штампы сборки (.prepared/.built/.installed),
+          # иначе make пересоберёт node с нуля. Штампы host-сборки лежат в build_dir/host
+          # (host-build.mk), target — в build_dir/target-*, файлы — в staging_dir.
           # bin/packages нужен на случай восстановления из кэша: make готовый Node не
           # перепаковывает, поэтому ipk тоже кладём в состояние.
           files=(staging_dir bin/packages)
-          for d in build_dir/target-*/node-*; do files+=("$d"); done
+          for d in build_dir/host/node-* build_dir/target-*/node-*; do files+=("$d"); done
           echo "в состояние входит:"; printf '  %s\n' "${files[@]}"
           tar -I 'zstd -3 -T0' -cf "$RUNNER_TEMP/node-state.tar.zst" "${files[@]}"
           ls -lh "$RUNNER_TEMP/node-state.tar.zst"
@@ -491,7 +495,9 @@ jobs:
             # следующий вызов make перегенерировал .config → OpenWrt запускал clean-build
             # и заново собирал node/openssl (отсюда 2+ часа в одном шарде).
             # -k продолжает сборку после ошибок, список упавших достаём из лога.
-            make "${targets[@]}" -j"$(nproc)" -k V=0 2>&1 | tee build.log || rc=$?
+            # CONFIG_AUTOREMOVE обязан совпадать с build-node: от него зависит имя штампа
+            # .prepared, а значит и то, признает ли шард перенесённый Node собранным.
+            make "${targets[@]}" -j"$(nproc)" -k V=0 CONFIG_AUTOREMOVE=y 2>&1 | tee build.log || rc=$?
             echo "make rc=$rc"
             if grep -qE '\-C feeds/node/node(-host)? ' build.log; then
               echo "::warning::шард пересобирал Node сам — состояние из build-node не подошло"
