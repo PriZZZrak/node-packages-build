@@ -113,7 +113,7 @@ jobs:
 
           # Ключ кэша собранного Node. Меняется при смене SDK, таргета или коммита фида,
           # поэтому при обновлении апстрима Node пересоберётся один раз и снова закэшируется.
-          node_key="node-state-v3-${slug}-${feeds_sha:0:16}"
+          node_key="node-state-v4-${slug}-${feeds_sha:0:16}"
 
           shards_json="$(python3 -c "import json,os;print(json.dumps(list(range(1,int(os.environ['N'])+1))))")"
 
@@ -199,7 +199,7 @@ jobs:
           # источник/Makefile (штампы .prepared завязаны на md5 каталога пакета).
           key: ${{ needs.plan.outputs.node_key }}
           restore-keys: |
-            node-state-v3-${{ needs.plan.outputs.cache_slug }}-
+            node-state-v4-${{ needs.plan.outputs.cache_slug }}-
 
       - name: Fetch and extract SDK
         env:
@@ -323,13 +323,19 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
-          # Шардам нужны не только файлы, но и штампы сборки (.prepared/.built/.installed),
-          # иначе make пересоберёт node с нуля. Штампы host-сборки лежат в build_dir/host
-          # (host-build.mk), target — в build_dir/target-*, файлы — в staging_dir.
-          # bin/packages нужен на случай восстановления из кэша: make готовый Node не
-          # перепаковывает, поэтому ipk тоже кладём в состояние.
+          # Шардам нужны не только файлы, но и штампы сборки (.prepared/.configured/.built),
+          # иначе make пересоберёт Node с нуля. Где что лежит:
+          #   staging_dir/hostpkg/bin/node        — сам host-Node (HOST_BUILD_PREFIX)
+          #   build_dir/hostpkg/node-*            — штампы host-сборки (BUILD_DIR_HOST)
+          #   build_dir/target-*/node-*           — штампы target-сборки
+          #   bin/packages                        — ipk (make готовый Node не перепаковывает)
           files=(staging_dir bin/packages)
-          for d in build_dir/host/node-* build_dir/target-*/node-*; do files+=("$d"); done
+          if [ -d build_dir/hostpkg ]; then
+            files+=(build_dir/hostpkg)
+          else
+            echo "::warning::build_dir/hostpkg отсутствует — host-Node в состояние не попадёт"
+          fi
+          for d in build_dir/target-*/node-*; do files+=("$d"); done
           echo "в состояние входит:"; printf '  %s\n' "${files[@]}"
           tar -I 'zstd -3 -T0' -cf "$RUNNER_TEMP/node-state.tar.zst" "${files[@]}"
           ls -lh "$RUNNER_TEMP/node-state.tar.zst"
@@ -457,11 +463,14 @@ jobs:
           fi
           tar --zstd -xf "$tgz" -C "$SDK_DIR" --no-same-owner staging_dir build_dir \
             || echo "::warning::не всё состояние распаковалось"
-          ls -lh "$SDK_DIR/staging_dir/host/bin/node" 2>/dev/null \
-            || echo "::warning::host-node в состоянии не найден"
-          ls -d "$SDK_DIR"/build_dir/{host,target-*}/node-* 2>/dev/null || true
-          # Штампы: если их нет или имя не совпадёт — шард соберёт Node заново.
-          ls -a "$SDK_DIR"/build_dir/host/node-*/.prepared_* 2>/dev/null | head -3 || true
+          # host-Node для сборки пакетов живёт в staging_dir/hostpkg (HOST_BUILD_PREFIX),
+          # а его штампы — в build_dir/hostpkg (BUILD_DIR_HOST при IS_PACKAGE_BUILD).
+          for p in staging_dir/hostpkg/bin/node staging_dir/host/bin/node; do
+            [ -e "$SDK_DIR/$p" ] && ls -lh "$SDK_DIR/$p"
+          done
+          ls -d "$SDK_DIR"/build_dir/hostpkg/node-* 2>/dev/null \
+            || echo "::warning::штампов host-Node (build_dir/hostpkg) нет — шард соберёт его сам"
+          ls -d "$SDK_DIR"/build_dir/target-*/node-* 2>/dev/null || true
 
       - name: Build shard packages
         working-directory: ${{ env.SDK_DIR }}
