@@ -40,6 +40,10 @@ on:
           - "3"
           - "4"
         default: "3"
+      artifacts_run:
+        description: "id прогона, из которого взять готовые ipk (пусто — собирать заново)"
+        required: false
+        default: ""
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -147,6 +151,7 @@ jobs:
   build-node:
     name: build node runtime
     needs: plan
+    if: ${{ inputs.artifacts_run == '' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 300
     env:
@@ -347,6 +352,7 @@ jobs:
   build-modules:
     name: shard ${{ matrix.shard }}/${{ needs.plan.outputs.shard_count }}
     needs: [plan, build-node]
+    if: ${{ inputs.artifacts_run == '' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 300
     strategy:
@@ -558,7 +564,7 @@ jobs:
   deploy:
     name: index + publish
     needs: [plan, build-node, build-modules]
-    if: ${{ !cancelled() && needs.build-node.result == 'success' }}
+    if: ${{ !cancelled() && (needs.build-node.result == 'success' || needs.build-node.result == 'skipped') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
@@ -595,6 +601,10 @@ jobs:
           path: dist
           merge-multiple: true
           pattern: ipk-*
+          # artifacts_run позволяет переиспользовать ipk прошлого прогона:
+          # тогда сборка не нужна и остаётся только индекс + подпись + публикация.
+          run-id: ${{ inputs.artifacts_run || github.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate index and sign
         working-directory: ${{ env.SDK_DIR }}
@@ -622,13 +632,21 @@ jobs:
             fi
           fi
           [ -x "$usign" ] || { echo "::error::usign не найден"; exit 1; }
-          priv="$("$usign" -F -p key-build)"
-          pub="$("$usign" -F -p key-build.pub)"
-          if [ "$priv" != "$pub" ]; then
-            echo "::error::OPKG_SIGN_KEY не соответствует key-build.pub ($priv != $pub)"
+          # Проверяем секрет по существу: подписываем пробное сообщение и проверяем подпись
+          # опубликованным key-build.pub. usign -F -p на приватном ключе не работает.
+          grep -q 'untrusted comment' key-build \
+            || { echo "::error::OPKG_SIGN_KEY после base64 -d не похож на usign-ключ"; exit 1; }
+          msg="$(mktemp)"; sig="$(mktemp)"
+          printf 'key-check' > "$msg"
+          "$usign" -S -m "$msg" -s key-build -x "$sig" \
+            || { echo "::error::usign не смог подписать пробное сообщение ключом из OPKG_SIGN_KEY"; exit 1; }
+          if ! "$usign" -V -m "$msg" -x "$sig" -p key-build.pub 2>/dev/null; then
+            echo "::error::OPKG_SIGN_KEY не соответствует key-build.pub — фид нельзя публиковать"
             exit 1
           fi
-          echo "ключ подписи: $pub"
+          rm -f "$msg" "$sig"
+          pub="$("$usign" -F -p key-build.pub)"
+          echo "ключ подписи ok: $pub"
 
           mkdir -p bin/packages
           cp -a "$GITHUB_WORKSPACE/dist/packages/." bin/packages/
