@@ -113,7 +113,7 @@ jobs:
 
           # Ключ кэша собранного Node. Меняется при смене SDK, таргета или коммита фида,
           # поэтому при обновлении апстрима Node пересоберётся один раз и снова закэшируется.
-          node_key="node-state-v4-${slug}-${feeds_sha:0:16}"
+          node_key="node-state-v5-${slug}-${feeds_sha:0:16}"
 
           shards_json="$(python3 -c "import json,os;print(json.dumps(list(range(1,int(os.environ['N'])+1))))")"
 
@@ -199,7 +199,7 @@ jobs:
           # источник/Makefile (штампы .prepared завязаны на md5 каталога пакета).
           key: ${{ needs.plan.outputs.node_key }}
           restore-keys: |
-            node-state-v4-${{ needs.plan.outputs.cache_slug }}-
+            node-state-v5-${{ needs.plan.outputs.cache_slug }}-
 
       - name: Fetch and extract SDK
         env:
@@ -322,23 +322,23 @@ jobs:
         continue-on-error: true
         run: |
           set -euo pipefail
-          shopt -s nullglob
-          # Шардам нужны не только файлы, но и штампы сборки (.prepared/.configured/.built),
-          # иначе make пересоберёт Node с нуля. Где что лежит:
-          #   staging_dir/hostpkg/bin/node        — сам host-Node (HOST_BUILD_PREFIX)
-          #   build_dir/hostpkg/node-*            — штампы host-сборки (BUILD_DIR_HOST)
-          #   build_dir/target-*/node-*           — штампы target-сборки
-          #   bin/packages                        — ipk (make готовый Node не перепаковывает)
-          files=(staging_dir bin/packages)
-          if [ -d build_dir/hostpkg ]; then
-            files+=(build_dir/hostpkg)
-          else
-            echo "::warning::build_dir/hostpkg отсутствует — host-Node в состояние не попадёт"
-          fi
-          for d in build_dir/target-*/node-*; do files+=("$d"); done
-          echo "в состояние входит:"; printf '  %s\n' "${files[@]}"
-          tar -I 'zstd -3 -T0' -cf "$RUNNER_TEMP/node-state.tar.zst" "${files[@]}"
+          # Переносим ВСЁ дерево сборки, а не список путей: угадывать, где OpenWrt
+          # держит штампы (.prepared/.configured/.built), уже дважды не получилось —
+          # host-сборка пакетов живёт в build_dir/hostpkg, а не build_dir/host.
+          # Исключаем только то, что восстанавливается отдельно или мешает:
+          #   dl    — свой кэш, tmp — мусор, logs — логи,
+          #   build_dir/host + toolchain-* — инструменты SDK, они уже есть в тарболе SDK.
+          tar -I 'zstd -1 -T0' -cf "$RUNNER_TEMP/node-state.tar.zst" \
+            --exclude='./dl' \
+            --exclude='./logs' \
+            --exclude='./tmp' \
+            --exclude='./build_dir/host' \
+            --exclude='./build_dir/toolchain-*' \
+            .
           ls -lh "$RUNNER_TEMP/node-state.tar.zst"
+          echo "--- ключевые артефакты в SDK:"
+          ls -lh staging_dir/hostpkg/bin/node staging_dir/host/bin/node 2>/dev/null || true
+          ls -d build_dir/hostpkg/node-* build_dir/target-*/node-* 2>/dev/null || true
 
       - name: Upload node build state
         continue-on-error: true
@@ -454,23 +454,31 @@ jobs:
           path: ${{ runner.temp }}/node-state
 
       - name: Unpack node build state
+        id: state
         run: |
           set -euo pipefail
           tgz="$RUNNER_TEMP/node-state/node-state.tar.zst"
           if [ ! -f "$tgz" ]; then
             echo "::warning::состояние Node недоступно — шард соберёт Node сам"
+            echo "ok=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          tar --zstd -xf "$tgz" -C "$SDK_DIR" --no-same-owner staging_dir build_dir \
-            || echo "::warning::не всё состояние распаковалось"
-          # host-Node для сборки пакетов живёт в staging_dir/hostpkg (HOST_BUILD_PREFIX),
-          # а его штампы — в build_dir/hostpkg (BUILD_DIR_HOST при IS_PACKAGE_BUILD).
-          for p in staging_dir/hostpkg/bin/node staging_dir/host/bin/node; do
-            [ -e "$SDK_DIR/$p" ] && ls -lh "$SDK_DIR/$p"
-          done
-          ls -d "$SDK_DIR"/build_dir/hostpkg/node-* 2>/dev/null \
-            || echo "::warning::штампов host-Node (build_dir/hostpkg) нет — шард соберёт его сам"
-          ls -d "$SDK_DIR"/build_dir/target-*/node-* 2>/dev/null || true
+          # Распаковываем всё дерево целиком: так вместе с файлами приезжают штампы
+          # сборки (build_dir/hostpkg и build_dir/target-*), feeds и .config того же
+          # состояния, а mtimes сохраняются.
+          tar --zstd -xf "$tgz" -C "$SDK_DIR" --no-same-owner
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+          echo "--- что приехало:"
+          ls -lh "$SDK_DIR/staging_dir/hostpkg/bin/node" "$SDK_DIR/staging_dir/host/bin/node" 2>/dev/null || true
+          ls -d "$SDK_DIR"/build_dir/hostpkg/node-* "$SDK_DIR"/build_dir/target-*/node-* 2>/dev/null || true
+          ls -a "$SDK_DIR"/build_dir/hostpkg/node-*/.prepared_* 2>/dev/null | head -3 || true
+          if [ ! -e "$SDK_DIR/staging_dir/hostpkg/bin/node" ] && [ ! -e "$SDK_DIR/staging_dir/host/bin/node" ]; then
+            echo "::warning::host-Node в состоянии не найден — жди пересборку"
+          fi
+          # ipk рантайма собирает build-node; в шардах они не нужны и дублировались бы
+          rm -f "$SDK_DIR"/bin/packages/*/node/node127_*.ipk \
+                "$SDK_DIR"/bin/packages/*/node/node-npm_*.ipk \
+                "$SDK_DIR"/bin/packages/*/node/node-yarn_*.ipk
 
       - name: Build shard packages
         working-directory: ${{ env.SDK_DIR }}

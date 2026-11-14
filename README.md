@@ -162,13 +162,14 @@ plan (1 мин) ── build-node   node + node-npm + node-yarn            ~1–
   Пакет `node-npm` объявлен внутри `node/Makefile`, поэтому собирается вместе с `node`.
   Результат кэшируется между прогонами
   (ключ: SDK + таргет + коммит node-фида) и упаковывается в артефакт `node-state`:
-  `staging_dir` (там же `hostpkg/bin/node`), `build_dir/hostpkg` (штампы host-сборки),
-  `build_dir/target-*/node-*` (штампы target-сборки) и ipk.
+  всё дерево сборки, кроме `dl`, `logs`, `tmp` и инструментов SDK. Переносится
+  не список путей, а дерево целиком — так вместе с файлами едут все штампы
+  (`build_dir/hostpkg`, `build_dir/target-*`), `feeds` и `.config` того же состояния.
   Сборка идёт с `CONFIG_AUTOREMOVE=y`: от него зависит способ подсчёта штампа
   `.prepared` (по содержимому, а не по mtime), иначе перенесённое состояние не
   признаётся собранным и Node пересобирается заново.
-  Важно: при сборке пакетов host-зависимости живут не в `build_dir/host`, а в
-  `build_dir/hostpkg` (`rules.mk: BUILD_DIR_HOST`), и ставятся в `staging_dir/hostpkg`.
+  Для справки: при сборке пакетов host-зависимости живут в `build_dir/hostpkg`
+  (`rules.mk: BUILD_DIR_HOST`) и ставятся в `staging_dir/hostpkg`, а не в `host`.
   Повторный прогон без изменений в Node начинается с восстановления этого состояния —
   сборки V8 нет вообще.
 * **build-modules** — ждут `build-node`, распаковывают `node-state` в свой SDK и собирают
