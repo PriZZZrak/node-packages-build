@@ -1,0 +1,62 @@
+# ОДНОРАЗОВЫЙ ФАЙЛ — удаляет себя после запуска.
+name: Dispatch once
+
+on:
+  push:
+
+permissions:
+  actions: write
+  contents: write
+
+jobs:
+  dispatch:
+    if: contains(github.event.head_commit.message, '[dispatch-once]')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Cancel in-progress build runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          ids="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow build.yml \
+                   --status in_progress --json databaseId --jq '.[].databaseId' || true)"
+          echo "in-progress: ${ids:-none}"
+          for id in $ids; do
+            gh run cancel "$id" --repo "$GITHUB_REPOSITORY" && echo "cancel requested: $id" || true
+          done
+
+      - name: Drop useless node-state-v3 cache
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh cache list --repo "$GITHUB_REPOSITORY" --limit 100 \
+            --json key,sizeInBytes --jq '.[] | "\(.sizeInBytes/1048576|floor) MB\t\(.key)"' || true
+          for key in $(gh cache list --repo "$GITHUB_REPOSITORY" --limit 100 \
+                         --json key --jq '.[].key' | grep '^node-state-v[123]-' || true); do
+            gh cache delete "$key" --repo "$GITHUB_REPOSITORY" && echo "удалён: $key" || true
+          done
+
+      - name: Dispatch full build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh workflow run build.yml --repo "$GITHUB_REPOSITORY" --ref main \
+            -f version=24.10.8 \
+            -f target=mediatek/filogic \
+            -f arch=aarch64_cortex-a53 \
+            -f shards=3
+          sleep 10
+          gh run list --repo "$GITHUB_REPOSITORY" --workflow build.yml --limit 2
+
+      - name: Remove this helper
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm -q .github/workflows/dispatch-once.yml
+          git commit -q -m 'ci: убрать одноразовый диспетчер сборки'
+          git push -q origin main
