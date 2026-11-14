@@ -156,8 +156,11 @@ plan (1 мин) ── build-node   node + node-npm + node-yarn            ~1–
 
 * **plan** — читает `sha256sums` релиза, находит имя SDK и его sha256, выбирает ветку
   node-фида и раскладывает шарды.
-* **build-node** — самый дорогой кусок (сборка V8). Пакет `node-npm` объявлен внутри
-  `node/Makefile`, поэтому собирается вместе с `node`. Результат кэшируется между прогонами
+* **build-node** — самый дорогой кусок (сборка V8). Собирает **обе** сборки Node:
+  target (`node`, `node-npm`, `node-yarn`) и **host** (`node/host`) — host-вариант нужен
+  шардам, потому что у 140 из 150 пакетов фида `PKG_BUILD_DEPENDS:=node/host`.
+  Пакет `node-npm` объявлен внутри `node/Makefile`, поэтому собирается вместе с `node`.
+  Результат кэшируется между прогонами
   (ключ: SDK + таргет + коммит node-фида) и упаковывается в артефакт `node-state`:
   `staging_dir`, `build_dir/{host,target-*}/node-*` со штампами и ipk.
   Сборка идёт с `CONFIG_AUTOREMOVE=y`: от него зависит способ подсчёта штампа

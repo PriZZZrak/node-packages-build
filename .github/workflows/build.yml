@@ -113,7 +113,7 @@ jobs:
 
           # Ключ кэша собранного Node. Меняется при смене SDK, таргета или коммита фида,
           # поэтому при обновлении апстрима Node пересоберётся один раз и снова закэшируется.
-          node_key="node-state-v2-${slug}-${feeds_sha:0:16}"
+          node_key="node-state-v3-${slug}-${feeds_sha:0:16}"
 
           shards_json="$(python3 -c "import json,os;print(json.dumps(list(range(1,int(os.environ['N'])+1))))")"
 
@@ -153,7 +153,7 @@ jobs:
     needs: plan
     if: ${{ inputs.artifacts_run == '' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 300
+    timeout-minutes: 350
     env:
       SDK_DIR: ${{ github.workspace }}/sdk
       ARCH: ${{ needs.plan.outputs.arch }}
@@ -199,7 +199,7 @@ jobs:
           # источник/Makefile (штампы .prepared завязаны на md5 каталога пакета).
           key: ${{ needs.plan.outputs.node_key }}
           restore-keys: |
-            node-state-v2-${{ needs.plan.outputs.cache_slug }}-
+            node-state-v3-${{ needs.plan.outputs.cache_slug }}-
 
       - name: Fetch and extract SDK
         env:
@@ -268,6 +268,12 @@ jobs:
             # пакеты фида установлены симлинками — проверяем через -e
             [ -e "package/feeds/node/$p" ] && targets+=("package/feeds/node/$p/compile")
           done
+          # Шардам нужен host-Node: у 140 из 150 пакетов фида PKG_BUILD_DEPENDS:=node/host.
+          # Если собрать только target, host-сборки не будет ни в состоянии, ни в кэше,
+          # и каждый шард соберёт себе host-Node сам.
+          if [ -e "package/feeds/node/node/Makefile" ]; then
+            targets+=("package/feeds/node/node/host/compile")
+          fi
           if [ ${#targets[@]} -eq 0 ]; then
             echo "::error::в node-фиде нет ни node, ни node-npm, ни node-yarn"
             exit 1
