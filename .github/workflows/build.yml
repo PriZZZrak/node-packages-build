@@ -453,7 +453,9 @@ jobs:
             || echo "::warning::не всё состояние распаковалось"
           ls -lh "$SDK_DIR/staging_dir/host/bin/node" 2>/dev/null \
             || echo "::warning::host-node в состоянии не найден"
-          ls -d "$SDK_DIR"/build_dir/target-*/node-* 2>/dev/null || true
+          ls -d "$SDK_DIR"/build_dir/{host,target-*}/node-* 2>/dev/null || true
+          # Штампы: если их нет или имя не совпадёт — шард соберёт Node заново.
+          ls -a "$SDK_DIR"/build_dir/host/node-*/.prepared_* 2>/dev/null | head -3 || true
 
       - name: Build shard packages
         working-directory: ${{ env.SDK_DIR }}
