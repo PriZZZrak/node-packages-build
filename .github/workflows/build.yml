@@ -524,7 +524,10 @@ jobs:
             # .prepared, а значит и то, признает ли шард перенесённый Node собранным.
             make "${targets[@]}" -j"$(nproc)" -k V=0 CONFIG_AUTOREMOVE=y 2>&1 | tee build.log || rc=$?
             echo "make rc=$rc"
-            if grep -qE '\-C feeds/node/node(-host)? ' build.log; then
+            # Честный признак пересборки Node: make снова собрал ipk рантайма
+            # (их мы удаляем после распаковки состояния). Грепать лог нельзя — make
+            # печатает "-C feeds/node/node host-compile" и когда всего лишь проверяет штамп.
+            if ls bin/packages/"$ARCH"/node/node127_*.ipk >/dev/null 2>&1; then
               echo "::warning::шард пересобирал Node сам — состояние из build-node не подошло"
             else
               echo "Node не пересобирался: готовое состояние принято"
